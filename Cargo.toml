@@ -1,0 +1,8 @@
+[package]
+name = "boxedmino"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+birdcage = "0.8.1"
+slint = "1.8.0"
