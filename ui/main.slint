@@ -1,19 +1,220 @@
+import { TabWidget, Button, Switch } from "std-widgets.slint";
+
+component BoxedminoBanner {
+    HorizontalLayout {
+        alignment: LayoutAlignment.center;
+        spacing: 8px;
+        visible: true;
+        Image {
+            width: 36px;
+            height: 36px;
+            source: @image-url("icons/boxedmino.svg");
+        }
+
+        Text {
+            accessible-role: AccessibleRole.text;
+            horizontal-alignment: TextHorizontalAlignment.center;
+            overflow: TextOverflow.elide;
+            text: "Boxedmino";
+            vertical-alignment: TextVerticalAlignment.center;
+            font-size: 24px;
+        }
+    }
+}
+
 export component MainWindow inherits Window {
-    VerticalLayout {
-        alignment: LayoutAlignment.start;
-        padding: 16px;
-        HorizontalLayout {
-            alignment: LayoutAlignment.center;
-            spacing: 4px;
-            Image {
-                source: @image-url("icons/boxedmino.svg");
+    callback open_link(string);
+    callback open_game(string);
+    title: "Boxedmino";
+    TabWidget {
+
+        Tab {
+            title: "Home";
+            VerticalLayout {
+                alignment: LayoutAlignment.center;
+                padding: 16px;
+                spacing: 8px;
+                Text {
+                    text: "Choose game version";
+                    font-size: 1.25rem;
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                }
+                // TODO: search bar
+                // TODO: version list
+                Button {
+                    text: "Open game";
+                    // TODO: open selected version
+                    // TODO: Warning if old version of game is run unsandboxed
+                    clicked => { open_game("v1.0.0"); }
+                }
             }
-            Text {
-                accessible-role: AccessibleRole.text;
-                horizontal-alignment: TextHorizontalAlignment.center;
-                overflow: TextOverflow.elide;
-                text: "Boxedmino";
-                font-size: 24px;
+        }
+        Tab {
+            title: "Settings";
+            /*
+                TODO: Settings page:
+                - Whether or not to enable sandboxing
+                - Whether or not to clear temp dir on play
+                - Whether or not to copy current save to temp dir on play
+            */
+            VerticalLayout {
+                alignment: LayoutAlignment.center;
+                padding: 16px;
+                spacing: 4px;
+                Text {
+                    // TODO: Remove not-implemented text when settings are implemented
+                    text: "Settings [NOT IMPLEMENTED YET]";
+                    font-size: 1.25rem;
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                }
+                HorizontalLayout {
+                    // TODO: Figure out how to transfer data between Rust and Slint
+                    alignment: LayoutAlignment.space-between;
+                    spacing: 8px;
+                    padding: 4px;
+                    VerticalLayout {
+                        Text {
+                            text: "Enable sandboxing";
+                            font-size: 1.25rem;
+                        }
+                        Text {
+                            text: "Alter the game to change the save directory.";
+                            font-size: 0.96rem;
+                        }
+                    }
+                    Switch {
+                        checked: false;
+                    }
+                }
+                HorizontalLayout {
+                    alignment: LayoutAlignment.space-between;
+                    spacing: 8px;
+                    padding: 4px;
+                    VerticalLayout {
+                        Text {
+                            text: "Clear temp dir on play";
+                            font-size: 1.25rem;
+                        }
+                        Text {
+                            text: "Delete the temporary directory before opening the game.";
+                            font-size: 0.96rem;
+                        }
+                    }
+                    Switch {
+                        checked: false;
+                    }
+                }
+                HorizontalLayout {
+                    alignment: LayoutAlignment.space-between;
+                    spacing: 8px;
+                    padding: 4px;
+                    VerticalLayout {
+                        Text {
+                            text: "Import save on play";
+                            font-size: 1.25rem;
+                        }
+                        Text {
+                            text: "Try to transfer your main save to the sandboxed game.";
+                            font-size: 0.96rem;
+                        }
+                    }
+                    Switch {
+                        checked: false;
+                    }
+                }
+                HorizontalLayout {
+                    alignment: LayoutAlignment.space-between;
+                    spacing: 8px;
+                    padding: 4px;
+                    VerticalLayout {
+                        Text {
+                            text: "Sandboxed save directory";
+                            font-size: 1.25rem;
+                        }
+                        Text {
+                            text: "The place the sandboxed game will save to.";
+                            font-size: 0.96rem;
+                        }
+                    }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button {
+                            text: "Copy";
+                            // TODO: "Copy to clipboard" callback
+                        }
+                        Button {
+                            text: "Open";
+                            // TODO: "Open in Explorer" callback
+                        }
+                        Button {
+                            text: "Clear";
+                            // TODO: Clear save dir callback
+                        }
+                    }
+                }
+                VerticalLayout {
+                    padding-top: 8px;
+                    Button {
+                        text: "Apply";
+                    }
+                }
+            }
+        }
+        Tab {
+            title: "About";
+            VerticalLayout {
+                alignment: LayoutAlignment.center;
+                padding: 16px;
+                spacing: 4px;
+                BoxedminoBanner {}
+                HorizontalLayout {
+                    alignment: LayoutAlignment.center;
+                    VerticalLayout {
+                        alignment: LayoutAlignment.center;
+                        spacing: 8px;
+                        Text {
+                            text: "Sandboxed Techmino runner";
+                            horizontal-alignment: TextHorizontalAlignment.center;
+                            font-size: 1.25rem;
+                        }
+                        Text {
+                            text: "(C) 26F-Studio - 2024";
+                            accessible-role: AccessibleRole.text;
+                            horizontal-alignment: TextHorizontalAlignment.center;
+                        }
+                        Text {
+                            text: "This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.";
+                            accessible-role: AccessibleRole.text;
+                            wrap: TextWrap.word-wrap;
+                            width: 36rem;
+                        }
+                        Text {
+                            text: "This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.";
+                            accessible-role: AccessibleRole.text;
+                            wrap: TextWrap.word-wrap;
+                            width: 36rem;
+                        }
+                        Text {
+                            text: "You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.  ";
+                            accessible-role: AccessibleRole.text;
+                            wrap: TextWrap.word-wrap;
+                            width: 36rem;
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    alignment: LayoutAlignment.center;
+                    padding-top: 12px;
+                    spacing: 8px;
+                    Button {
+                        text: "License";
+                        clicked => { open_link("https://www.gnu.org/licenses/"); }
+                    }
+                    Button {
+                        text: "Source code";
+                        clicked => { open_link("https://github.com/26F-Studio/Boxedmino"); }
+                    }
+                }
             }
         }
     }

@@ -8,7 +8,7 @@ Use cases:
 3. Revisit a deleted feature or bug from an old version of the game.
 4. Play a specific version of the game for a challenge or speedrun.
 
-This project is uses [birdcage](https://github.com/phylum-dev/birdcage) to run old versions of [Techmino](https://github.com/26F-Studio/Techmino) in a temporary environment.
+This project is uses Lua injection to run old versions of [Techmino](https://github.com/26F-Studio/Techmino) in a temporary environment.
 
 ## Installation
 
