@@ -1,0 +1,20 @@
+export component MainWindow inherits Window {
+    VerticalLayout {
+        alignment: LayoutAlignment.start;
+        padding: 16px;
+        HorizontalLayout {
+            alignment: LayoutAlignment.center;
+            spacing: 4px;
+            Image {
+                source: @image-url("icons/boxedmino.svg");
+            }
+            Text {
+                accessible-role: AccessibleRole.text;
+                horizontal-alignment: TextHorizontalAlignment.center;
+                overflow: TextOverflow.elide;
+                text: "Boxedmino";
+                font-size: 24px;
+            }
+        }
+    }
+}

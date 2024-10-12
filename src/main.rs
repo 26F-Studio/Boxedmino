@@ -16,13 +16,27 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-fn main() {
+slint::include_modules!();
+
+fn main() -> Result<(), slint::PlatformError> {
     println!("╔═════╗");
     println!("║ ▄▄  ║  Boxedmino");
     println!("║  ▀▀ ║  Sandboxed Techmino runner");
     println!("╚═════╝");
     println!("2024 - 26F-Studio | https://github.com/26F-Studio/Boxedmino\n\n");
-    todo!();
+
+    // TODO: check for command line arguments
+
+    open_window()?;
+
+    return Ok(());
+}
+
+fn open_window() -> Result<(), slint::PlatformError> {
+    let main_window = MainWindow::new()?;
+    main_window.run()?;
+
+    return Ok(());
 }
 
 /*

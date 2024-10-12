@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 birdcage = "0.8.1"
 slint = "1.8.0"
+
+[build-dependencies]
+slint-build = "1.8.0"
