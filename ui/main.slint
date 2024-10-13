@@ -25,9 +25,13 @@ component BoxedminoBanner {
 export component MainWindow inherits Window {
     callback open_link(string);
     callback open_game(string);
+    callback copy_text(string);
+    callback clear_save_dir();
+    callback open_save_dir();
+    in property <string> sandbox_path;
+
     title: "Boxedmino";
     TabWidget {
-
         Tab {
             title: "Home";
             VerticalLayout {
@@ -141,14 +145,47 @@ export component MainWindow inherits Window {
                         Button {
                             text: "Copy";
                             // TODO: "Copy to clipboard" callback
+                            clicked => { copy_text(sandbox_path); }
                         }
                         Button {
                             text: "Open";
                             // TODO: "Open in Explorer" callback
+                            clicked => { open_save_dir(); }
                         }
                         Button {
                             text: "Clear";
                             // TODO: Clear save dir callback
+                            clicked => { clear_save_dir(); }
+                        }
+                    }
+                }
+                VerticalLayout {
+                    spacing: 8px;
+                    padding: 4px;
+                    VerticalLayout {
+                        Text {
+                            text: "Game repo path";
+                            font-size: 1.25rem;
+                        }
+                        Text {
+                            text: "The game source code folder containing main.lua.";
+                            font-size: 0.96rem;
+                        }
+                    }
+                    HorizontalLayout {
+                        Rectangle {
+                            TextInput {
+                                text: "";
+                                font-size: 1rem;
+                                height: 1rem;
+                                input-type: InputType.text;
+                                vertical-alignment: TextVerticalAlignment.center;
+                                single-line: true;
+                            }
+                        }
+                        Button {
+                            horizontal-stretch: 0;
+                            text: "Browse...";
                         }
                     }
                 }

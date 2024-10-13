@@ -15,7 +15,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+use std::process::{Command, Stdio};
 use webbrowser;
+mod paths;
 
 slint::include_modules!();
 
@@ -26,9 +28,49 @@ fn main() -> Result<(), slint::PlatformError> {
     println!("╚═════╝");
     println!("2024 - 26F-Studio | https://github.com/26F-Studio/Boxedmino\n\n");
 
+    check_dependencies().unwrap();
+
     // TODO: check for command line arguments
 
     open_window()?;
+
+    return Ok(());
+}
+
+fn check_dependencies() -> Result<(), Vec<String>> {
+    let mut missing_dependencies: Vec<String> = Vec::new();
+
+    if Command::new("git")
+        .arg("--version")
+        .stdout(Stdio::null())
+        .status()
+        .is_err()
+    {
+        eprintln!("{}\n{}\n{}",
+            "It seems that Git is not installed on your system.",
+            "Install Git from: https://git-scm.com/downloads",
+            "Make sure to add Git to your PATH, and that running `git --version` in the terminal works."
+        );
+        missing_dependencies.push("git".to_string());
+    }
+
+    if Command::new("love")
+        .arg("--version")
+        .stdout(Stdio::null())
+        .status()
+        .is_err()
+    {
+        eprintln!("{}\n{}\n{}",
+            "It seems that LÖVE is not installed on your system.",
+            "Install LÖVE from: https://love2d.org/",
+            "Make sure to add LÖVE to your PATH, and that running `love --version` in the terminal works."
+        );
+        missing_dependencies.push("love".to_string());
+    }
+
+    if !missing_dependencies.is_empty() {
+        return Err(missing_dependencies);
+    }
 
     return Ok(());
 }
