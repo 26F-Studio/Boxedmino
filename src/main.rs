@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 use std::process::{Command, Stdio};
+use slint::{ModelRc, SharedString, VecModel};
 use webbrowser;
 mod paths;
 
@@ -82,6 +83,19 @@ fn open_window() -> Result<MainWindow, slint::PlatformError> {
         println!("Opening the game is currently unimplemented!");
     });
     main_window.on_open_link(open_link);
+    main_window.set_versions(
+        ModelRc::new(
+            VecModel::from(
+                vec![
+                    // "Debug Version"
+                    // "Unfinished Version".to_string(),
+                    // "This is unimplemented".to_string(),
+                    // "v1.0.0".to_string(),
+                    SharedString::from("Debug Version"),
+                ]
+            )
+        )
+    );
     main_window.run()?;
 
     return Ok(main_window);

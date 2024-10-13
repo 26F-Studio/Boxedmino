@@ -1,4 +1,4 @@
-import { TabWidget, Button, Switch } from "std-widgets.slint";
+import { TabWidget, Button, Switch, ScrollView, Palette } from "std-widgets.slint";
 
 component BoxedminoBanner {
     HorizontalLayout {
@@ -29,6 +29,9 @@ export component MainWindow inherits Window {
     callback clear_save_dir();
     callback open_save_dir();
     in property <string> sandbox_path;
+    in-out property <[string]> versions: ["Uninitialized A", "Uninitialized B", "Uninitialized C", "Uninitialized D"];
+    private property <[string]> matched_versions;
+    in-out property <string> selected_version: "Uninitialized A";
 
     title: "Boxedmino";
     TabWidget {
@@ -44,12 +47,60 @@ export component MainWindow inherits Window {
                     horizontal-alignment: TextHorizontalAlignment.center;
                 }
                 // TODO: search bar
-                // TODO: version list
+                ScrollView {
+                    width: 100%;
+                    min-height: 8rem;
+                    preferred-height: 2626262626rem;
+                    padding-left: 8rem;
+
+                    VerticalLayout {
+                        width: 100%;
+                        padding-top: 6px;
+                        padding-bottom: 6px;
+                        accessible-role: AccessibleRole.list;
+                        alignment: LayoutAlignment.center;
+
+                        for version in versions: Rectangle {
+                            width: 100%;
+                            accessible-role: AccessibleRole.button;
+                            accessible-checkable: true;
+                            accessible-checked: version == selected_version;
+                            background: {
+                                if (version == selected_version) {
+                                    return Palette.selection-background;
+                                }
+                                if (area.has-hover) {
+                                    return Palette.alternate-background
+                                        .mix(Palette.selection-background, 0.5);
+                                }
+                                return Palette.alternate-background;
+                            }
+                            
+                            area := TouchArea {
+                                clicked => { selected_version = version; }
+                            }
+
+                            Text {
+                                width: parent.width;
+                                text: version;
+                                min-height: 2rem;
+                                horizontal-alignment: TextHorizontalAlignment.left;
+                                vertical-alignment: TextVerticalAlignment.center;
+                                color: {
+                                    if (version == selected_version) {
+                                        return Palette.selection-foreground;
+                                    }
+                                    return Palette.foreground;
+                                }
+                            }
+                        }
+                    }
+                }
                 Button {
                     text: "Open game";
-                    // TODO: open selected version
+                    // TODO: open game
                     // TODO: Warning if old version of game is run unsandboxed
-                    clicked => { open_game("v1.0.0"); }
+                    clicked => { open_game(selected_version); }
                 }
             }
         }
