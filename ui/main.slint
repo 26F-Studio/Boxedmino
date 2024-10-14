@@ -1,4 +1,12 @@
-import { TabWidget, Button, Switch, ScrollView, Palette } from "std-widgets.slint";
+import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton } from "std-widgets.slint";
+
+struct Settings {
+    sandboxed: bool,
+    clear_temp_dir: bool,
+    import_save_on_play: bool,
+    repo_initialized: bool,
+    game_repo_path: string,
+}
 
 component BoxedminoBanner {
     HorizontalLayout {
@@ -28,10 +36,18 @@ export component MainWindow inherits Window {
     callback copy_text(string);
     callback clear_save_dir();
     callback open_save_dir();
+    callback browse_for_repo();
+    callback apply_settings();
     in property <string> sandbox_path;
     in-out property <[string]> versions: ["Uninitialized A", "Uninitialized B", "Uninitialized C", "Uninitialized D"];
     private property <[string]> matched_versions;
     in-out property <string> selected_version: "Uninitialized A";
+    in-out property <Settings> settings: {
+        sandboxed: true,
+        clear_temp_dir: true,
+        import_save_on_play: false,
+        game_repo_path: "",
+    };
 
     title: "Boxedmino";
     TabWidget {
@@ -98,7 +114,6 @@ export component MainWindow inherits Window {
                 }
                 Button {
                     text: "Open game";
-                    // TODO: open game
                     // TODO: Warning if old version of game is run unsandboxed
                     clicked => { open_game(selected_version); }
                 }
@@ -106,12 +121,6 @@ export component MainWindow inherits Window {
         }
         Tab {
             title: "Settings";
-            /*
-                TODO: Settings page:
-                - Whether or not to enable sandboxing
-                - Whether or not to clear temp dir on play
-                - Whether or not to copy current save to temp dir on play
-            */
             VerticalLayout {
                 alignment: LayoutAlignment.center;
                 padding: 16px;
@@ -129,7 +138,7 @@ export component MainWindow inherits Window {
                     padding: 4px;
                     VerticalLayout {
                         Text {
-                            text: "Enable sandboxing";
+                            text: "Enable sandboxed";
                             font-size: 1.25rem;
                         }
                         Text {
@@ -138,7 +147,7 @@ export component MainWindow inherits Window {
                         }
                     }
                     Switch {
-                        checked: false;
+                        checked: settings.sandboxed;
                     }
                 }
                 HorizontalLayout {
@@ -156,7 +165,7 @@ export component MainWindow inherits Window {
                         }
                     }
                     Switch {
-                        checked: false;
+                        checked: settings.clear_temp_dir;
                     }
                 }
                 HorizontalLayout {
@@ -174,7 +183,7 @@ export component MainWindow inherits Window {
                         }
                     }
                     Switch {
-                        checked: false;
+                        checked: settings.import_save_on_play;
                     }
                 }
                 HorizontalLayout {
@@ -225,18 +234,33 @@ export component MainWindow inherits Window {
                     }
                     HorizontalLayout {
                         Rectangle {
-                            TextInput {
-                                text: "";
+                            border-width: {
+                                if (repo_path_input.has-focus) {
+                                    return 2px;
+                                }
+                                return 1px;
+                            }
+                            border-color: {
+                                if (repo_path_input.has-focus) {
+                                    return Palette.selection-background;
+                                }
+                                return Palette.foreground;
+                            }
+                            border-radius: 8px;
+
+                            repo_path_input := TextInput {
+                                text: settings.game_repo_path;
                                 font-size: 1rem;
-                                height: 1rem;
                                 input-type: InputType.text;
                                 vertical-alignment: TextVerticalAlignment.center;
                                 single-line: true;
+                                padding: 4px;
                             }
                         }
                         Button {
                             horizontal-stretch: 0;
                             text: "Browse...";
+                            clicked => { browse_for_repo(); }
                         }
                     }
                 }
@@ -244,6 +268,7 @@ export component MainWindow inherits Window {
                     padding-top: 8px;
                     Button {
                         text: "Apply";
+                        clicked => { apply_settings(); }
                     }
                 }
             }
@@ -304,6 +329,61 @@ export component MainWindow inherits Window {
                     }
                 }
             }
+        }
+    }
+}
+
+export component ErrorWindow inherits Dialog {
+    callback dismiss();
+    in property <string> error_message: "An error occurred.";
+    in property <string> error_details: "No details available.";
+    in property <string> error_title: "Boxedmino - Error";
+
+    title: error_title;
+    
+    VerticalLayout {
+        alignment: LayoutAlignment.space-between;
+        padding: 16px;
+        spacing: 16px;
+        HorizontalLayout {
+            alignment: LayoutAlignment.start;
+            spacing: 16px;
+            VerticalLayout {
+                alignment: LayoutAlignment.center;
+                Image {
+                    width: 36px;
+                    height: 36px;
+                    source: @image-url("icons/error.svg");
+                    colorize: red;
+                }
+            }
+            VerticalLayout {
+                alignment: LayoutAlignment.start;
+                spacing: 8px;
+                VerticalLayout {
+                    alignment: LayoutAlignment.start;
+                    spacing: 4px;
+                    Text {
+                        text: "Error";
+                        font-size: 1.25rem;
+                        font-weight: 700;
+                    }
+                    Text {
+                        text: error_message;
+                        font-size: 1.125rem;
+                    }
+                }
+                Text {
+                    text: error_details;
+                    font-size: 1rem;
+                    wrap: TextWrap.word-wrap;
+                    max-width: 36rem;
+                }
+            }
+        }
+        StandardButton {
+            kind: close;
+            clicked => { dismiss(); }
         }
     }
 }

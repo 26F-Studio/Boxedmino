@@ -29,7 +29,19 @@ fn main() -> Result<(), slint::PlatformError> {
     println!("╚═════╝");
     println!("2024 - 26F-Studio | https://github.com/26F-Studio/Boxedmino\n\n");
 
-    check_dependencies().unwrap();
+    if let Err(missing_dependencies) = check_dependencies() {
+        let mut message = "The following dependencies are missing:".to_string();
+        for dependency in missing_dependencies {
+            message.push_str(&format!("\n- {}", dependency));
+        }
+        message.push_str("You can find download links in the console output, if you opened this program from the terminal.");
+        open_error_window(
+            Some("Boxedmino - Startup Error".to_string()),
+            Some("Missing Dependencies".to_string()),
+            Some(message),
+        )?;
+        return Ok(());
+    }
 
     // TODO: check for command line arguments
 
@@ -76,22 +88,62 @@ fn check_dependencies() -> Result<(), Vec<String>> {
     return Ok(());
 }
 
+fn open_error_window(
+    title: Option<String>,
+    message: Option<String>,
+    details: Option<String>,
+) -> Result<ErrorWindow, slint::PlatformError> {
+    let error_window = ErrorWindow::new()?;
+    error_window.set_error_title(
+        title.unwrap_or("Error".to_string()).into()
+    );
+    error_window.set_error_message(
+        message.unwrap_or("An error occurred.".to_string()).into()
+    );
+    error_window.set_error_details(
+        details.unwrap_or("No details provided.".to_string()).into()
+    );
+    let weak = error_window.as_weak();
+    error_window.on_dismiss(move || {
+        weak.unwrap().window().hide().unwrap();
+    });
+    error_window.run()?;
+
+    return Ok(error_window);
+}
+
+fn safe_todo(feature: Option<&str>) {
+    let message =
+        if let Some(feature) = feature {
+            format!("{} is not implemented yet.", feature)
+        } else {
+            "This feature is not implemented yet.".to_string()
+        };
+    
+    eprintln!("{}", message);
+
+    let _ = open_error_window(
+        Some("Boxedmino - Unimplemented".to_string()),
+        Some("Unimplmented Feature".to_string()),
+        Some(message)
+    );
+}
+
 fn open_window() -> Result<MainWindow, slint::PlatformError> {
     let main_window = MainWindow::new()?;
     main_window.on_open_game(|_| {
         // TODO: open game
-        println!("Opening the game is currently unimplemented!");
+        safe_todo(Some("Opening the game"));
     });
     main_window.on_open_link(open_link);
     main_window.set_versions(
         ModelRc::new(
             VecModel::from(
                 vec![
-                    // "Debug Version"
-                    // "Unfinished Version".to_string(),
-                    // "This is unimplemented".to_string(),
-                    // "v1.0.0".to_string(),
                     SharedString::from("Debug Version"),
+                    SharedString::from("Unfinished Version"),
+                    SharedString::from("This is unimplemented"),
+                    SharedString::from("v1.0.0"),
                 ]
             )
         )
@@ -110,12 +162,8 @@ fn open_link(url: slint::SharedString) {
 
 /*
 Plan:
-- UI using Slint
-    - Some sorta dropdown for git tags?
-    - Some sorta "Browse..." button for temp directory?
-    - A button to run the game
-- Run `git` to switch versions (don't forget to check that git exists)
-- RUn `love` to run the game (don't forget to check that love exists)
+- Run `git` to switch versions
+- RUn `love` to run the game
 - Inject Lua to the game to change the save directory
 - Clear the save directory before running the game
  */
