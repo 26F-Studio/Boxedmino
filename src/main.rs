@@ -18,7 +18,7 @@
 use std::process::{Command, Stdio};
 use slint::{ModelRc, SharedString, VecModel};
 use copypasta::ClipboardProvider;
-use webbrowser;
+use open;
 mod consts;
 
 slint::include_modules!();
@@ -161,6 +161,15 @@ fn open_window() -> Result<MainWindow, slint::PlatformError> {
     main_window.on_copy_text(|string| {
         copy_text_handled(string.as_str());
     });
+    main_window.on_open_save_dir(|| {
+        open::that(consts::paths::GAME_SAVE_PATH).unwrap_or_else(|err| {
+            open_error_window_safe(
+                Some("Failed to open save directory".to_string()),
+                Some(format!("Path: {}", consts::paths::GAME_SAVE_PATH)),
+                Some(format!("Details: {}", err))
+            );
+        });
+    });
     main_window.set_is_wayland_used(is_wayland_session());
     main_window.set_versions(
         ModelRc::new(
@@ -181,9 +190,16 @@ fn open_window() -> Result<MainWindow, slint::PlatformError> {
 
 fn open_link(url: slint::SharedString) {
     println!("Opening link: {url}");
-    if webbrowser::open(&url).is_err() {
-        eprintln!("Failed to open the link: {}", url);
-    }
+    // if webbrowser::open(&url).is_err() {
+    //     eprintln!("Failed to open the link: {}", url);
+    // }
+    open::that(url.as_str()).unwrap_or_else(|_| {
+        open_error_window_safe(
+            None,
+            Some("Failed to open link".to_string()),
+            Some(format!("URL: {}", url))
+        );
+    });
 }
 
 fn copy_text(text: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

@@ -133,7 +133,6 @@ export component MainWindow inherits Window {
                     horizontal-alignment: TextHorizontalAlignment.center;
                 }
                 HorizontalLayout {
-                    // TODO: Figure out how to transfer data between Rust and Slint
                     alignment: LayoutAlignment.space-between;
                     spacing: 8px;
                     padding: 4px;
@@ -203,7 +202,7 @@ export component MainWindow inherits Window {
                     }
                     HorizontalLayout {
                         spacing: 8px;
-                        if (!is_wayland_used) : copy_sandbox_path := Button {
+                        if (!is_wayland_used) : Button {
                             text: "Copy";
                             clicked => { copy_text(sandbox_path); }
                         }
