@@ -20,6 +20,7 @@ use slint::{ModelRc, SharedString, VecModel};
 use copypasta::ClipboardProvider;
 use open;
 mod consts;
+mod conf;
 
 slint::include_modules!();
 
@@ -44,7 +45,14 @@ fn main() -> Result<(), slint::PlatformError> {
         return Ok(());
     }
 
+    let config = conf::Config::load();
+
+    if(!config.repo_initialized) {
+        safe_todo(Some("Initializing the game repository"));
+    }
+
     // TODO: check for command line arguments
+
 
     open_window()?;
 

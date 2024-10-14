@@ -525,6 +525,8 @@ version = "0.0.0"
 dependencies = [
  "copypasta",
  "open",
+ "serde",
+ "serde_json",
  "slint",
  "slint-build",
 ]
