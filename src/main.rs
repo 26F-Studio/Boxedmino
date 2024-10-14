@@ -17,8 +17,9 @@
  */
 use std::process::{Command, Stdio};
 use slint::{ModelRc, SharedString, VecModel};
+use copypasta::ClipboardProvider;
 use webbrowser;
-mod paths;
+mod consts;
 
 slint::include_modules!();
 
@@ -112,6 +113,24 @@ fn open_error_window(
     return Ok(error_window);
 }
 
+fn open_error_window_safe(
+    title: Option<String>,
+    message: Option<String>,
+    details: Option<String>,
+) {
+    let result = open_error_window(
+        title.clone(),
+        message.clone(),
+        details.clone()
+    );
+    if let Err(error) = result {
+        eprintln!("Failed to open error window: {}", error);
+        eprintln!("Title: {}", &title.unwrap_or("unspecified".into()).to_string());
+        eprintln!("Message: {}", &message.unwrap_or("unspecified".into()).to_string());
+        eprintln!("Details: {}", &details.unwrap_or("unspecified".into()).to_string());
+    }
+}
+
 fn safe_todo(feature: Option<&str>) {
     let message =
         if let Some(feature) = feature {
@@ -135,7 +154,14 @@ fn open_window() -> Result<MainWindow, slint::PlatformError> {
         // TODO: open game
         safe_todo(Some("Opening the game"));
     });
+    main_window.set_sandbox_path(
+        consts::paths::GAME_SAVE_PATH.into()
+    );
     main_window.on_open_link(open_link);
+    main_window.on_copy_text(|string| {
+        copy_text_handled(string.as_str());
+    });
+    main_window.set_is_wayland_used(is_wayland_session());
     main_window.set_versions(
         ModelRc::new(
             VecModel::from(
@@ -158,6 +184,30 @@ fn open_link(url: slint::SharedString) {
     if webbrowser::open(&url).is_err() {
         eprintln!("Failed to open the link: {}", url);
     }
+}
+
+fn copy_text(text: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut ctx = copypasta::ClipboardContext::new()?;
+    ctx.set_contents(text.to_string())?;
+    return Ok(());
+}
+
+fn copy_text_handled(text: &str) {
+    if is_wayland_session() {
+        println!("Copying text to clipboard is not supported on Wayland.");
+    }
+    if let Err(error) = copy_text(text) {
+        open_error_window_safe(
+            None,
+            Some("Failed to copy text to clipboard.".to_string()),
+            Some(format!("Error: {}", error))
+        );
+    }
+}
+
+fn is_wayland_session() -> bool {
+    return std::env::var("XDG_SESSION_TYPE")
+        .unwrap_or("".to_string()) == "wayland";
 }
 
 /*

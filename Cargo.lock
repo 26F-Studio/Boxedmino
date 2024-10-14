@@ -523,6 +523,7 @@ dependencies = [
 name = "boxedmino"
 version = "0.0.0"
 dependencies = [
+ "copypasta",
  "slint",
  "slint-build",
  "webbrowser",

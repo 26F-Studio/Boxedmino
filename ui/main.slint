@@ -48,6 +48,7 @@ export component MainWindow inherits Window {
         import_save_on_play: false,
         game_repo_path: "",
     };
+    in property <bool> is_wayland_used: false;
 
     title: "Boxedmino";
     TabWidget {
@@ -202,9 +203,8 @@ export component MainWindow inherits Window {
                     }
                     HorizontalLayout {
                         spacing: 8px;
-                        Button {
+                        if (!is_wayland_used) : copy_sandbox_path := Button {
                             text: "Copy";
-                            // TODO: "Copy to clipboard" callback
                             clicked => { copy_text(sandbox_path); }
                         }
                         Button {
