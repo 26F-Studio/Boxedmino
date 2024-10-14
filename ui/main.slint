@@ -386,3 +386,92 @@ export component ErrorWindow inherits Dialog {
         }
     }
 }
+
+export component SetupWindow inherits Window {
+    callback finish(); // TODO
+    callback change_path(string); // TODO
+    callback clone_repo(string); // TODO
+    callback browse_for_repo(); // TODO
+    callback open_link(string);
+
+    in property <bool> repo_valid: false;
+    in property <bool> dir_empty: false;
+    in-out property <string> game_repo_path: "";
+
+    title: "Boxedmino - Setup";
+
+    VerticalLayout {
+        alignment: LayoutAlignment.center;
+        padding: 16px;
+        spacing: 32px;
+        BoxedminoBanner {}
+        VerticalLayout {
+            spacing: 8px;
+            Text {
+                text: "Welcome to Boxedmino!";
+                font-size: 1.25rem;
+                font-weight: 700;
+                horizontal-alignment: TextHorizontalAlignment.center;
+            }
+            Text {
+                text: "To run Boxedmino, you need to set up the game's Git repository.";
+                font-size: 1.25rem;
+                horizontal-alignment: TextHorizontalAlignment.center;
+            }
+            Text {
+                text: "If you already have it, you can enter the path below.\nIf you don't, you can enter the path where you want to initialize it.\nYou can only initialize it on an empty directory.";
+                font-size: 1rem;
+                horizontal-alignment: TextHorizontalAlignment.center;
+            }
+        }
+        VerticalLayout {
+            spacing: 8px;
+            VerticalLayout {
+                Text {
+                    text: "Path to repository";
+                }
+                HorizontalLayout {
+                    Rectangle {
+                        border-width: {
+                            if (game_repo_path_input.has-focus) {
+                                return 2px;
+                            }
+                            return 1px;
+                        }
+                        border-color: {
+                            if (game_repo_path_input.has-focus) {
+                                return Palette.selection-background;
+                            }
+                            return Palette.foreground;
+                        }
+                        game_repo_path_input := TextInput {
+                            text: game_repo_path;
+                            font-size: 1rem;
+                            input-type: InputType.text;
+                            vertical-alignment: TextVerticalAlignment.center;
+                            single-line: true;
+                            padding: 4px;
+                            accepted => { change_path(game_repo_path); }
+                        }
+                    }
+                    Button {
+                        text: "Browse...";
+                        clicked => { browse_for_repo(); }
+                    }
+                }
+            }
+            HorizontalLayout {
+                Button {
+                    text: "Download repository";
+                    enabled: dir_empty;
+                    clicked => { clone_repo(game_repo_path); }
+                }
+                Button {
+                    text: "Finish setup";
+                    enabled: repo_valid;
+                    clicked => { finish(); }
+                }
+            }
+        }
+    }
+}

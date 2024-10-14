@@ -45,10 +45,10 @@ fn main() -> Result<(), slint::PlatformError> {
         return Ok(());
     }
 
-    let config = conf::Config::load();
+    let mut config = conf::Config::load();
 
-    if(!config.repo_initialized) {
-        safe_todo(Some("Initializing the game repository"));
+    if !config.repo_initialized {
+        run_setup()?;
     }
 
     // TODO: check for command line arguments
@@ -194,6 +194,76 @@ fn open_window() -> Result<MainWindow, slint::PlatformError> {
     main_window.run()?;
 
     return Ok(main_window);
+}
+
+fn is_dir_empty(path: &str) -> bool {
+    let files = std::fs::read_dir(path);
+    if let Err(_) = files {
+        return false;
+    }
+
+    let files = files.unwrap();
+    return files.count() == 0;
+}
+
+fn is_repo_valid(path: &str) -> bool {
+    let path = std::path::Path::new(path);
+    if !path.is_dir() {
+        return false;
+    }
+
+    let files = std::fs::read_dir(path);
+
+    if let Err(_) = files {
+        return false;
+    }
+
+    let files = files.unwrap();
+
+    // Check for .git and main.lua
+    let mut has_git = false;
+    let mut has_main_lua = false;
+
+    for file in files {
+        let file = file.expect("Failed to read file");
+        let file_name = file.file_name();
+        let file_name = file_name.to_str().unwrap_or("");
+        if file_name == ".git" {
+            has_git = true;
+        } else if file_name == "main.lua" {
+            has_main_lua = true;
+        }
+    }
+
+    return has_git && has_main_lua;
+}
+
+fn run_setup() -> Result<(), slint::PlatformError> {
+    let mut setup_finished = false;
+    let setup_window = SetupWindow::new()?;
+    setup_window.on_open_link(open_link);
+    // setup_window.on_change_path(|path| {
+    //     if is_repo_valid(path.as_str()) {
+    //         setup_window.set_repo_valid(true);
+    //     } else {
+    //         setup_window.set_repo_valid(false);
+    //     }
+    // });
+    // setup_window.on_finish(|| {
+    //     setup_finished = true;
+    // });
+    
+    setup_window.run()?;
+
+    if setup_finished {
+        let mut config = conf::Config::load();
+        config.repo_initialized = true;
+        config.game_repo_path = setup_window.get_game_repo_path().to_string();
+        config.save();
+        return Ok(());
+    } else {
+        panic!("Setup closed prematurely");
+    }
 }
 
 fn open_link(url: slint::SharedString) {
