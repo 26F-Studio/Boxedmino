@@ -127,7 +127,7 @@ export component MainWindow inherits Window {
                 padding: 16px;
                 spacing: 4px;
                 Text {
-                    // TODO: Remove not-implemented text when settings are implemented
+                    // TODO: Implement settings
                     text: "Settings [NOT IMPLEMENTED YET]";
                     font-size: 1.25rem;
                     horizontal-alignment: TextHorizontalAlignment.center;
@@ -208,7 +208,6 @@ export component MainWindow inherits Window {
                         }
                         Button {
                             text: "Open";
-                            // TODO: "Open in Explorer" callback
                             clicked => { open_save_dir(); }
                         }
                         Button {
@@ -388,10 +387,10 @@ export component ErrorWindow inherits Dialog {
 }
 
 export component SetupWindow inherits Window {
-    callback finish(); // TODO
-    callback change_path(string); // TODO
-    callback clone_repo(string); // TODO
-    callback browse_for_repo() -> string; // TODO
+    callback finish();
+    callback change_path(string);
+    callback clone_repo(string);
+    callback browse_for_repo() -> string;
     callback open_link(string);
 
     in property <bool> repo_valid: false;
