@@ -1,3 +1,6 @@
+# Work in Progress
+This project is not complete, and many key features are missing. Below are the planned features for the project.
+
 # Boxedmino
 
 A Rust program to select and run old versions of [Techmino](https://github.com/26F-Studio/Techmino), without worrying about savefile corruption. **When playing through this, your progress will not be saved.**
@@ -8,7 +11,7 @@ Use cases:
 3. Revisit a deleted feature or bug from an old version of the game.
 4. Play a specific version of the game for a challenge or speedrun.
 
-This project is uses Lua injection to run old versions of [Techmino](https://github.com/26F-Studio/Techmino) in a temporary environment.
+This project uses Lua injection to run old versions of [Techmino](https://github.com/26F-Studio/Techmino) in a temporary environment.
 
 ## Installation
 
