@@ -16,12 +16,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use conf::Config;
 use rfd::FileDialog;
 use std::fs;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::process::{Command, Stdio};
-use std::io::{BufRead, BufReader};
 use slint::{ModelRc, SharedString, VecModel};
 use copypasta::ClipboardProvider;
 use open;
@@ -62,7 +62,7 @@ fn main() -> Result<(), slint::PlatformError> {
     // TODO: check for command line arguments
 
 
-    open_window()?;
+    open_window(&config)?;
 
     return Ok(());
 }
@@ -164,7 +164,7 @@ fn safe_todo(feature: Option<&str>) {
     );
 }
 
-fn open_window() -> Result<MainWindow, slint::PlatformError> {
+fn open_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     let main_window = MainWindow::new()?;
     main_window.on_open_game(|_| {
         // TODO: open game
@@ -189,6 +189,13 @@ fn open_window() -> Result<MainWindow, slint::PlatformError> {
                 Some(format!("Details: {}", err))
             );
         }
+    });
+    main_window.set_settings(Settings {
+        sandboxed: cfg.sandboxed,
+        clear_temp_dir: cfg.clear_temp_dir,
+        import_save_on_play: cfg.import_save_on_play,
+        game_repo_path: cfg.game_repo_path.clone().into(),
+        repo_initialized: cfg.repo_initialized,
     });
     main_window.set_is_wayland_used(is_wayland_session());
     main_window.set_versions(

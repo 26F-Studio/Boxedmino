@@ -2,8 +2,14 @@ use std::fs;
 use crate::consts::paths;
 use serde::{Serialize, Deserialize};
 
+slint::include_modules!();
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
+    // Editing this struct?
+    // Don't forget to also update the Slint model!
+    // See the `Settings` struct in /ui/main.slint
+
     pub sandboxed: bool,
     pub clear_temp_dir: bool,
     pub import_save_on_play: bool,
