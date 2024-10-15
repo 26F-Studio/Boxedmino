@@ -557,6 +557,7 @@ name = "boxedmino"
 version = "0.0.0"
 dependencies = [
  "copypasta",
+ "home",
  "open",
  "rfd",
  "serde",

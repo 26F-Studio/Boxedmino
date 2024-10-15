@@ -158,7 +158,7 @@ fn safe_todo(feature: Option<&str>) {
 
     let _ = open_error_window(
         Some("Boxedmino - Unimplemented".to_string()),
-        Some("Unimplmented Feature".to_string()),
+        Some("Unimplemented Feature".to_string()),
         Some(message)
     );
 }
@@ -170,20 +170,24 @@ fn open_window() -> Result<MainWindow, slint::PlatformError> {
         safe_todo(Some("Opening the game"));
     });
     main_window.set_sandbox_path(
-        consts::paths::GAME_SAVE_PATH.into()
+        consts::paths::get_game_save_path()
+            .to_string_lossy()
+            .to_string()
+            .into()
     );
     main_window.on_open_link(open_link);
     main_window.on_copy_text(|string| {
         copy_text_handled(string.as_str());
     });
     main_window.on_open_save_dir(|| {
-        open::that(consts::paths::GAME_SAVE_PATH).unwrap_or_else(|err| {
+        let path = consts::paths::get_game_save_path();
+        if let Err(err) = open::that(&path) {
             open_error_window_safe(
                 Some("Failed to open save directory".to_string()),
-                Some(format!("Path: {}", consts::paths::GAME_SAVE_PATH)),
+                Some(format!("Path: {:#?}", path)),
                 Some(format!("Details: {}", err))
             );
-        });
+        }
     });
     main_window.set_is_wayland_used(is_wayland_session());
     main_window.set_versions(

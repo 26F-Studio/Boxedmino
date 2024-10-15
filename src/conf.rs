@@ -1,5 +1,4 @@
 use std::fs;
-use std::path::Path;
 use crate::consts::paths;
 use serde::{Serialize, Deserialize};
 
@@ -23,7 +22,7 @@ impl Config {
         }
     }
     pub fn load() -> Self {
-        let config_path = paths::CONFIG_PATH;
+        let config_path = paths::get_config_path();
         let config = fs::read_to_string(config_path);
         match config {
             Ok(config) => {
@@ -38,7 +37,7 @@ impl Config {
         }
     }
     pub fn save(&self) {
-        let config_path = Path::new(paths::CONFIG_PATH);
+        let config_path = paths::get_config_path();
         let config = serde_json::to_string(self)
             .expect("Failed to serialize config");
 
@@ -50,7 +49,7 @@ impl Config {
                 ).as_str());
         }
 
-        fs::write(config_path, config)
+        fs::write(&config_path, config)
             .expect(format!(
                 "Failed to write config to {}",
                 config_path.to_str().unwrap_or("(invalid path)")
