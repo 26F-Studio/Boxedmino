@@ -21,6 +21,7 @@ use std::fs;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::process::{Command, Stdio};
+use std::io::{BufRead, BufReader};
 use slint::{ModelRc, SharedString, VecModel};
 use copypasta::ClipboardProvider;
 use open;
@@ -308,13 +309,173 @@ fn run_setup() -> Result<(), slint::PlatformError> {
     }
 }
 
-fn clone_repo(_path: SharedString) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    // TODO
-    open_error_window_safe(
-        None,
-        Some("Cloning the repository is not implemented yet.".to_string()),
-        Some("For the time being, please clone the repository manually.".to_string())
+const REPO_LINK: &str = "https://github.com/26F-Studio/Techmino.git";
+
+#[cfg(target_os = "windows")]
+fn get_terminal_clone_command(path: String) -> Option<Command> {
+    let mut cmd = Command::new("cmd");
+    cmd.args([
+        "/c",
+        "git",
+        "clone",
+        REPO_LINK,
+        path.as_str()
+    ]);
+    return Some(cmd);
+}
+
+#[cfg(target_os = "macos")]
+fn get_terminal_clone_command(path: String) -> Option<Command> {
+    let script_dir = "/tmp/_boxedmino_clone.sh";
+
+    let script_result = fs::write(
+        script_dir,
+        format!(
+            "git clone {} {}; rm {}",
+            REPO_LINK,
+            path,
+            script_dir
+        ),
     );
+
+    if let Err(e) = script_result {
+        return None;
+    }
+
+    let chmod_result =
+        Command::new("chmod")
+            .args([
+                "+x",
+                script_dir
+            ])
+            .status();
+    
+    if let Err(e) = chmod_result {
+        return None;
+    }
+
+    let mut command = Command::new("open");
+    command.args([
+        "-a",
+        "/Applications/Utilities/Terminal.app",
+        script_dir
+    ]);
+
+    return Some(command);
+}
+
+#[cfg(target_os = "linux")]
+fn get_terminal_clone_command(path: String) -> Option<Command> {
+    let popular_term_emus = [
+        "x-terminal-emulator",
+        "xterm",
+        "gnome-terminal",
+        "konsole",
+        "alacritty",
+        "kitty",
+        "tilix",
+        "terminator",
+        "urxvt",
+        "rxvt",
+        "lxterminal",
+        "xfce4-terminal",
+        "guake",
+        "yakuake",
+        "st",
+        "Eterm",
+        "hyper",
+        "qterminal",
+        "tilda",
+        "wezterm",
+        "termux",
+        "foot",
+        "sakura",
+        "mlterm",
+        "cool-retro-term",
+        "extraterm",
+        "termite"
+    ];
+
+    let terminal = popular_term_emus.iter().find(|term| {
+        Command::new("which")
+            .stdout(Stdio::null())
+            .arg(term)
+            .status()
+            .is_ok()
+    });
+
+    if let Some(terminal) = terminal {
+        let mut cmd = Command::new(terminal);
+
+        cmd.args([
+            "-e",
+            "git",
+            "clone",
+            REPO_LINK,
+            path.as_str()
+        ]);
+
+        return Some(cmd);
+    }
+
+    return None;
+}
+
+fn get_fallback_clone_command(path: String) -> Command {
+    let mut cmd = Command::new("git");
+    cmd.args([
+        "clone",
+        REPO_LINK,
+        path.as_str()
+    ]);
+
+    return cmd;
+}
+
+fn clone_repo(path: SharedString) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut terminal_opened = true;
+    let command =
+        get_terminal_clone_command(path.to_string().clone());
+    
+    let mut command = match command {
+        Some(c) => c,
+        None => {
+            terminal_opened = false;
+            get_fallback_clone_command(path.to_string().clone())
+        }
+    };
+
+    if terminal_opened {
+        command.status()?;
+    } else {
+        let window = GitCloneWaitWindow::new();
+
+        if let Err(e) = window {
+            return Err(Box::new(e));
+        }
+
+        let window = window.unwrap();
+
+        let weak = window.as_weak();
+
+        window.on_dismiss(move || {
+            weak.unwrap().window().hide().unwrap();
+        });
+
+        let child = command.spawn()
+            .expect("Failed to run git clone command");
+
+        // when the command is done, close the window
+        let weak = window.as_weak();
+        std::thread::spawn(move || {
+            child.wait_with_output().expect("Failed to wait for git clone command");
+            weak.unwrap().set_finished(true);
+            weak.unwrap().window().hide().unwrap();
+        });
+
+        window.run()?;
+    }
+
     return Ok(());
 }
 

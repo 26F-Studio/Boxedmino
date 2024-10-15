@@ -1,4 +1,4 @@
-import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton } from "std-widgets.slint";
+import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton, TextEdit, ProgressIndicator } from "std-widgets.slint";
 
 struct Settings {
     sandboxed: bool,
@@ -484,6 +484,65 @@ export component SetupWindow inherits Window {
             }
             if (!repo_valid): Text {
                 text: "Cannot finish setup yet as the directory is not a valid Git repository.";
+            }
+        }
+    }
+}
+
+export component GitCloneWaitWindow inherits Window {
+    callback dismiss();
+    in property <bool> finished: true;
+
+    title: "Boxedmino - Git clone";
+
+    VerticalLayout {
+        alignment: LayoutAlignment.center;
+        padding: 1rem;
+        spacing: 1.25rem;
+        Text {
+            text: "Git clone in progress";
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        Text {
+            text: {
+                if (finished) {
+                    "Git clone finished! Press the button below to close this window.";
+                } else {
+                    "We are currently running downloading the repository, " +
+                    "but we could not find your terminal application. " +
+                    "As such, we cannot show the progress of this operation. " +
+                    "Please wait until the operation finishes.";
+                }
+            }
+            width: 25rem;
+            height: 6rem;
+        }
+        ProgressIndicator {
+            indeterminate: !finished;
+            progress: 1;
+        }
+        HorizontalLayout {
+            alignment: LayoutAlignment.center;
+            Rectangle {
+                width: 6rem;
+                height: 3rem;
+                border-color: {
+                    if (finished) {
+                        return @radial-gradient(circle, 
+                            transparent 0%,
+                            transparent 92.6%,
+                            yellow 92.7%
+                        );
+                    }
+                    return transparent;
+                }
+                border-width: 2px;
+                StandardButton {
+                    kind: close;
+                    enabled: finished;
+                    clicked => { dismiss(); }
+                }
             }
         }
     }
