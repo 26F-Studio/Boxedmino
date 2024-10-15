@@ -203,6 +203,14 @@ fn open_window() -> Result<MainWindow, slint::PlatformError> {
             )
         )
     );
+    main_window.on_filter(|arr: ModelRc<SharedString>, search: SharedString| -> ModelRc<SharedString> {
+        let search = search.as_str().to_lowercase();
+        let filtered = arr.filter(
+            move |item| item.as_str().to_lowercase().contains(&search)
+        );
+
+        return ModelRc::new(filtered);
+    });
     main_window.run()?;
 
     return Ok(main_window);
