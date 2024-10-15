@@ -37,7 +37,7 @@ export component MainWindow inherits Window {
     callback clear_save_dir();
     callback open_save_dir();
     callback browse_for_repo();
-    callback apply_settings();
+    pure callback apply_settings(Settings);
     //              array, searched_str -> matched
     pure callback filter([string], string) -> [string];
 
@@ -140,8 +140,7 @@ export component MainWindow inherits Window {
                 padding: 16px;
                 spacing: 4px;
                 Text {
-                    // TODO: Implement settings
-                    text: "Settings [NOT IMPLEMENTED YET]";
+                    text: "Settings";
                     font-size: 1.25rem;
                     horizontal-alignment: TextHorizontalAlignment.center;
                 }
@@ -161,6 +160,7 @@ export component MainWindow inherits Window {
                     }
                     Switch {
                         checked: settings.sandboxed;
+                        toggled => { settings.sandboxed = self.checked; }
                     }
                 }
                 HorizontalLayout {
@@ -179,6 +179,7 @@ export component MainWindow inherits Window {
                     }
                     Switch {
                         checked: settings.clear_temp_dir;
+                        toggled => { settings.clear_temp_dir = self.checked; }
                     }
                 }
                 HorizontalLayout {
@@ -197,6 +198,7 @@ export component MainWindow inherits Window {
                     }
                     Switch {
                         checked: settings.import_save_on_play;
+                        toggled => { settings.import_save_on_play = self.checked; }
                     }
                 }
                 HorizontalLayout {
@@ -265,7 +267,7 @@ export component MainWindow inherits Window {
                     padding-top: 8px;
                     Button {
                         text: "Apply";
-                        clicked => { apply_settings(); }
+                        clicked => { apply_settings(settings); }
                     }
                 }
             }

@@ -218,6 +218,16 @@ fn open_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
 
         return ModelRc::new(filtered);
     });
+    main_window.on_apply_settings(|settings| {
+        let config = Config {
+            sandboxed: settings.sandboxed,
+            clear_temp_dir: settings.clear_temp_dir,
+            import_save_on_play: settings.import_save_on_play,
+            repo_initialized: settings.repo_initialized,
+            game_repo_path: settings.game_repo_path.as_str().to_string(),
+        };
+        config.save();
+    });
     main_window.run()?;
 
     return Ok(main_window);
