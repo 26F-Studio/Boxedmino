@@ -321,9 +321,6 @@ fn clone_repo(_path: SharedString) -> Result<(), Box<dyn std::error::Error + Sen
 
 fn open_link(url: slint::SharedString) {
     println!("Opening link: {url}");
-    // if webbrowser::open(&url).is_err() {
-    //     eprintln!("Failed to open the link: {}", url);
-    // }
     open::that(url.as_str()).unwrap_or_else(|_| {
         open_error_window_safe(
             None,

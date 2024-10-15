@@ -479,6 +479,12 @@ export component SetupWindow inherits Window {
                     clicked => { finish(); }
                 }
             }
+            if (!dir_empty): Text {
+                text: "Cannot download here as the directory is not empty.";
+            }
+            if (!repo_valid): Text {
+                text: "Cannot finish setup yet as the directory is not a valid Git repository.";
+            }
         }
     }
 }
