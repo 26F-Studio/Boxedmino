@@ -391,7 +391,7 @@ export component SetupWindow inherits Window {
     callback finish(); // TODO
     callback change_path(string); // TODO
     callback clone_repo(string); // TODO
-    callback browse_for_repo(); // TODO
+    callback browse_for_repo() -> string; // TODO
     callback open_link(string);
 
     in property <bool> repo_valid: false;
@@ -451,12 +451,19 @@ export component SetupWindow inherits Window {
                             vertical-alignment: TextVerticalAlignment.center;
                             single-line: true;
                             padding: 4px;
-                            accepted => { change_path(game_repo_path); }
+                            accepted => {
+                                game_repo_path = self.text;
+                                change_path(game_repo_path);
+                            }
                         }
                     }
                     Button {
                         text: "Browse...";
-                        clicked => { browse_for_repo(); }
+                        clicked => {
+                            game_repo_path = browse_for_repo();
+                            game_repo_path_input.text = game_repo_path;
+                            change_path(game_repo_path);
+                        }
                     }
                 }
             }

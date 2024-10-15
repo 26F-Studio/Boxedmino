@@ -15,6 +15,11 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+use rfd::FileDialog;
+use std::fs;
+use std::rc::Rc;
+use std::cell::RefCell;
 use std::process::{Command, Stdio};
 use slint::{ModelRc, SharedString, VecModel};
 use copypasta::ClipboardProvider;
@@ -47,7 +52,9 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let mut config = conf::Config::load();
 
-    if !config.repo_initialized {
+    if !config.repo_initialized ||
+        !is_repo_valid(&config.game_repo_path)
+    {
         run_setup()?;
     }
 
@@ -197,7 +204,7 @@ fn open_window() -> Result<MainWindow, slint::PlatformError> {
 }
 
 fn is_dir_empty(path: &str) -> bool {
-    let files = std::fs::read_dir(path);
+    let files = fs::read_dir(path);
     if let Err(_) = files {
         return false;
     }
@@ -212,7 +219,7 @@ fn is_repo_valid(path: &str) -> bool {
         return false;
     }
 
-    let files = std::fs::read_dir(path);
+    let files = fs::read_dir(path);
 
     if let Err(_) = files {
         return false;
@@ -239,32 +246,59 @@ fn is_repo_valid(path: &str) -> bool {
 }
 
 fn run_setup() -> Result<(), slint::PlatformError> {
-    let mut setup_finished = false;
-    let setup_window = SetupWindow::new()?;
-    setup_window.on_open_link(open_link);
-    // setup_window.on_change_path(|path| {
-    //     if is_repo_valid(path.as_str()) {
-    //         setup_window.set_repo_valid(true);
-    //     } else {
-    //         setup_window.set_repo_valid(false);
-    //     }
-    // });
-    // setup_window.on_finish(|| {
-    //     setup_finished = true;
-    // });
+        // Wrap `setup_finished` and `setup_window` in Rc<RefCell> for shared access.
+        let setup_finished = Rc::new(RefCell::new(false));
+        let setup_window = Rc::new(SetupWindow::new()?);
     
-    setup_window.run()?;
+        setup_window.on_open_link(open_link);
+        
+        // Clone Rc pointers for use in closures
+        let window_clone = setup_window.clone();
 
-    if setup_finished {
-        let mut config = conf::Config::load();
-        config.repo_initialized = true;
-        config.game_repo_path = setup_window.get_game_repo_path().to_string();
-        config.save();
-        return Ok(());
-    } else {
-        panic!("Setup closed prematurely");
-    }
+        setup_window.on_browse_for_repo(|| {
+            let path = FileDialog::new()
+                .pick_folder()
+                .map(|path| path.to_string_lossy().to_string());
+
+            return path.unwrap_or_default().into();
+        });
+
+        setup_window.on_change_path(move |path| {
+            let valid = is_repo_valid(path.as_str());
+            window_clone.set_repo_valid(valid);
+
+            let empty = is_dir_empty(path.as_str());
+            window_clone.set_dir_empty(empty);
+        });
+    
+        let window_clone = setup_window.clone();
+        let finished_clone = setup_finished.clone();
+        setup_window.on_finish(move || {
+            *finished_clone.borrow_mut() = true;
+            window_clone.as_weak().unwrap().hide().expect(
+                "Failed to close setup window"
+            );
+        });
+    
+        setup_window.run()?;
+    
+        // Check if setup finished properly
+        if *setup_finished.borrow() {
+            let mut config = conf::Config::load();
+            config.repo_initialized = true;
+            config.game_repo_path = setup_window.get_game_repo_path().to_string();
+            config.save();
+            Ok(())
+        } else {
+            panic!("Setup closed prematurely");
+        }
 }
+
+fn clone_repo(path: SharedString) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    safe_todo(Some("Cloning the repository"));
+    return Ok(());
+}
+
 
 fn open_link(url: slint::SharedString) {
     println!("Opening link: {url}");
