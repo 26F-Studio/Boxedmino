@@ -1,4 +1,4 @@
-import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton, TextEdit, ProgressIndicator } from "std-widgets.slint";
+import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton, ProgressIndicator, LineEdit } from "std-widgets.slint";
 
 struct Settings {
     sandboxed: bool,
@@ -67,33 +67,14 @@ export component MainWindow inherits Window {
                     font-size: 1.25rem;
                     horizontal-alignment: TextHorizontalAlignment.center;
                 }
-                Rectangle {
+                LineEdit {
                     width: 100%;
-                    height: 2rem;
-                    border-color: {
-                        if(search_input.has_focus) {
-                            return Palette.selection-background;
-                        }
-                        return Palette.foreground;
-                    }
-
-                    border-width: {
-                        if(search_input.has_focus) {
-                            return 2px;
-                        }
-                        return 1px;
-                    }
-
-                    search_input := TextInput {
-                        width: 100%;
-                        height: 2rem;
-                        single-line: true;
-                        vertical-alignment: center;
-                        text: searched_string;
-                        edited => {
-                            searched_string = self.text;
-                            matched_versions = filter(versions, searched_string);
-                        }
+                    height: 2.718rem;
+                    text: searched_string;
+                    placeholder-text: "Search...";
+                    edited => {
+                        searched_string = self.text;
+                        matched_versions = filter(versions, searched_string);
                     }
                 }
                 ScrollView {
@@ -263,31 +244,17 @@ export component MainWindow inherits Window {
                         }
                     }
                     HorizontalLayout {
-                        Rectangle {
-                            border-width: {
-                                if (repo_path_input.has-focus) {
-                                    return 2px;
-                                }
-                                return 1px;
-                            }
-                            border-color: {
-                                if (repo_path_input.has-focus) {
-                                    return Palette.selection-background;
-                                }
-                                return Palette.foreground;
-                            }
-                            border-radius: 8px;
-
-                            repo_path_input := TextInput {
-                                text: settings.game_repo_path;
-                                font-size: 1rem;
-                                input-type: InputType.text;
-                                vertical-alignment: TextVerticalAlignment.center;
-                                single-line: true;
-                                padding: 4px;
+                        LineEdit {
+                            width: 100%;
+                            height: 3.14rem;
+                            text: settings.game_repo_path;
+                            placeholder-text: "Path to game repo";
+                            edited => {
+                                settings.game_repo_path = self.text;
                             }
                         }
                         Button {
+                            max-width: 5rem;
                             horizontal-stretch: 0;
                             text: "Browse...";
                             clicked => { browse_for_repo(); }
@@ -462,33 +429,20 @@ export component SetupWindow inherits Window {
                     text: "Path to repository";
                 }
                 HorizontalLayout {
-                    Rectangle {
-                        border-width: {
-                            if (game_repo_path_input.has-focus) {
-                                return 2px;
-                            }
-                            return 1px;
-                        }
-                        border-color: {
-                            if (game_repo_path_input.has-focus) {
-                                return Palette.selection-background;
-                            }
-                            return Palette.foreground;
-                        }
-                        game_repo_path_input := TextInput {
-                            text: game_repo_path;
-                            font-size: 1rem;
-                            input-type: InputType.text;
-                            vertical-alignment: TextVerticalAlignment.center;
-                            single-line: true;
-                            padding: 4px;
-                            accepted => {
-                                game_repo_path = self.text;
-                                change_path(game_repo_path);
-                            }
+                    spacing: 8px;
+                    game_repo_path_input := LineEdit {
+                        width: 100%;
+                        height: 3.14rem;
+                        text: game_repo_path;
+                        placeholder-text: "Path to game repo";
+                        edited => {
+                            game_repo_path = self.text;
+                            change_path(game_repo_path);
                         }
                     }
-                    Button {
+                    browse_button := Button {
+                        max-width: 5rem;
+                        horizontal-stretch: 0;
                         text: "Browse...";
                         clicked => {
                             game_repo_path = browse_for_repo();
