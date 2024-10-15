@@ -43,3 +43,18 @@ If you have Cargo installed, it can be more convenient to install the program th
 cargo install boxedmino
 ``` -->
 
+## Building
+
+To build the project, you will need to have Rust installed. You can install Rust by following the instructions on [rustup.rs](https://rustup.rs/).
+
+Then, run the following command to build the project:
+```
+cargo build --release
+```
+
+If you want to build and run it, you can use the following command:
+```
+cargo run --release
+```
+
+The `--release` flag is optional and may optimize the program for performance, at the cost of slower compilation times.
