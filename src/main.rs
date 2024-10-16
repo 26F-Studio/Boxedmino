@@ -111,6 +111,8 @@ fn mutate_config_with_cli_args(cfg: &mut Config) {
     while i < args.len() {
         let arg = args[i].as_str();
         match arg {
+            // TODO: --version for versioning
+            // TODO: --list-versions
             "--help" => {
                 println!("Note: Running Boxedmino with commandline arguments will immediately");
                 println!("      start the game without the Boxedmino UI.\n");
@@ -298,6 +300,7 @@ fn open_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
         repo_initialized: cfg.repo_initialized,
     });
     main_window.set_is_wayland_used(is_wayland_session());
+    // TODO: set version list
     main_window.set_versions(
         ModelRc::new(
             VecModel::from(
