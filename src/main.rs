@@ -510,7 +510,7 @@ fn get_terminal_clone_command(path: String) -> Option<Command> {
         ),
     );
 
-    if let Err(e) = script_result {
+    if let Err(_) = script_result {
         return None;
     }
 
@@ -522,7 +522,7 @@ fn get_terminal_clone_command(path: String) -> Option<Command> {
             ])
             .status();
     
-    if let Err(e) = chmod_result {
+    if let Err(_) = chmod_result {
         return None;
     }
 
