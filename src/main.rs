@@ -19,6 +19,7 @@
 use conf::Config;
 use rfd::FileDialog;
 use std::fs;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::process::{Command, Stdio};
@@ -53,18 +54,109 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let mut config = conf::Config::load();
 
+    mutate_config_with_cli_args(&mut config);    
+    
     if !config.repo_initialized ||
         !is_repo_valid(&config.game_repo_path)
     {
         run_setup()?;
     }
 
-    // TODO: check for command line arguments
-
-
-    open_window(&config)?;
+    if config.use_gui {
+        open_window(&config)?;
+    } else {
+        run_game(&config);
+    }
 
     return Ok(());
+}
+
+fn run_game(cfg: &Config) {
+    let path = PathBuf::from(cfg.game_repo_path.clone());
+
+    // Inject script to start of main.lua
+    let script = include_str!("injected.lua");
+    let main_lua = path.join("main.lua");
+    let mut main_lua_contents = fs::read_to_string(&main_lua)
+        .expect("Failed to read Techmino's main.lua file");
+    main_lua_contents = format!("{}\n{}", script, main_lua_contents);
+    fs::write(main_lua, main_lua_contents)
+        .expect("Failed to write to Techmino's main.lua file");
+
+    let mut command = Command::new("love");
+    command.arg(path);
+    command.status()
+        .expect("Running love2d yielded an error");
+
+    // Restore main.lua
+    let mut command = Command::new("git");
+    command.arg("restore");
+    command.arg("main.lua");
+    command.status()
+        .expect("Failed to restore main.lua using git");
+}
+
+fn mutate_config_with_cli_args(cfg: &mut Config) {
+    let args: Vec<String> = std::env::args().collect();
+    let mut i = 1;
+    while i < args.len() {
+        let arg = args[i].as_str();
+        match arg {
+            "--help" => {
+                println!("Note: Running Boxedmino with commandline arguments will immediately");
+                println!("      start the game without the Boxedmino UI.\n");
+                println!("Arguments");
+                println!("--help:                   Show this help message");
+                println!("--sandboxed:              Trick the game into saving into a temporary folder");
+                println!("--no-sandboxed:           Do not trick the game into saving elsewhere");
+                println!("--clear-temp-dir:         Clear the temporary directory before");
+                println!("                          running the game");
+                println!("--no-clear-temp-dir:      Do not clear the temporary directory");
+                println!("                          before running the game");
+                println!("--import-save-on-play:    Try to transfer your main save into");
+                println!("                          the temporary folder");
+                println!("--no-import-save-on-play: Do not transfer your main save into");
+                println!("                          the temporary folder");
+                std::process::exit(0);
+            }
+            "--sandboxed" => {
+                cfg.sandboxed = true;
+                cfg.use_gui = false;
+            }
+            "--no-sandbox" => {
+                cfg.sandboxed = false;
+                cfg.use_gui = false;
+            }
+            "--clear-temp-dir" => {
+                cfg.clear_temp_dir = true;
+                cfg.use_gui = false;
+            }
+            "--no-clear-temp-dir" => {
+                cfg.clear_temp_dir = false;
+                cfg.use_gui = false;
+            }
+            "--import-save-on-play" => {
+                cfg.import_save_on_play = true;
+                cfg.use_gui = false;
+            }
+            "--no-import-save-on-play" => {
+                cfg.import_save_on_play = false;
+                cfg.use_gui = false;
+            }
+            "--repo-path" => {
+                if i + 1 < args.len() {
+                    cfg.game_repo_path = args[i + 1].clone();
+                    i += 1;
+                }
+                cfg.use_gui = false;
+            }
+            _ => {
+                eprintln!("Unknown argument: {}", arg);
+                std::process::exit(1);
+            }
+        }
+        i += 1;
+    }
 }
 
 fn check_dependencies() -> Result<(), Vec<String>> {
@@ -167,8 +259,7 @@ fn safe_todo(feature: Option<&str>) {
 fn open_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     let main_window = MainWindow::new()?;
     main_window.on_open_game(|_| {
-        // TODO: open game
-        safe_todo(Some("Opening the game"));
+        run_game(&Config::load());
     });
     main_window.set_sandbox_path(
         consts::paths::get_game_save_path()
@@ -225,6 +316,7 @@ fn open_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
             import_save_on_play: settings.import_save_on_play,
             repo_initialized: settings.repo_initialized,
             game_repo_path: settings.game_repo_path.as_str().to_string(),
+            use_gui: true,
         };
         config.save();
     });
