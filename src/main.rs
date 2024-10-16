@@ -74,14 +74,23 @@ fn main() -> Result<(), slint::PlatformError> {
 fn run_game(cfg: &Config) {
     let path = PathBuf::from(cfg.game_repo_path.clone());
 
-    // Inject script to start of main.lua
-    let script = include_str!("injected.lua");
-    let main_lua = path.join("main.lua");
-    let mut main_lua_contents = fs::read_to_string(&main_lua)
-        .expect("Failed to read Techmino's main.lua file");
-    main_lua_contents = format!("{}\n{}", script, main_lua_contents);
-    fs::write(main_lua, main_lua_contents)
-        .expect("Failed to write to Techmino's main.lua file");
+    if cfg.sandboxed {
+        let script = include_str!("injected.lua");
+        let main_lua = path.join("main.lua");
+        let mut main_lua_contents = fs::read_to_string(&main_lua)
+            .expect("Failed to read Techmino's main.lua file");
+        main_lua_contents = format!("{}\n{}", script, main_lua_contents);
+        fs::write(main_lua, main_lua_contents)
+            .expect("Failed to write to Techmino's main.lua file");
+    }
+
+    if cfg.clear_temp_dir {
+        clear_temp_dir();
+    }
+
+    if cfg.import_save_on_play {
+        safe_todo(Some("Importing save on play"));
+    }
 
     let mut command = Command::new("love");
     command.arg(path);
@@ -301,6 +310,7 @@ fn open_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
             )
         )
     );
+    main_window.on_clear_save_dir(clear_temp_dir);
     main_window.on_filter(|arr: ModelRc<SharedString>, search: SharedString| -> ModelRc<SharedString> {
         let search = search.as_str().to_lowercase();
         let filtered = arr.filter(
@@ -333,6 +343,48 @@ fn is_dir_empty(path: &str) -> bool {
 
     let files = files.unwrap();
     return files.count() == 0;
+}
+
+fn clear_temp_dir() {
+    let path = consts::paths::get_game_save_path();
+
+    println!("Dangerous operation: Clearing temporary directory at {}", path.to_string_lossy());
+
+    if !path.exists() {
+        return;
+    }
+
+    let entries = fs::read_dir(path);
+
+    if let Err(_) = entries {
+        return;
+    }
+
+    let entries = entries.unwrap();
+
+    for entry in entries {
+        let entry = entry.expect("Failed to read entry");
+        let path = entry.path();
+        if path.is_dir() {
+            fs::remove_dir_all(&path)
+                .expect(
+                    format!(
+                        "Failed to remove directory {}",
+                        path.to_string_lossy()
+                    ).as_str()
+                )
+        } else {
+            fs::remove_file(&path)
+                .expect(
+                    format!(
+                        "Failed to remove file {}",
+                        path.to_string_lossy()
+                    ).as_str()
+                )
+        }
+    }
+
+    println!("Cleared temporary directory");
 }
 
 fn is_repo_valid(path: &str) -> bool {
