@@ -1,31 +1,15 @@
 pub mod paths {
-    // #[cfg(target_os = "windows")]
-    // pub const GAME_SAVE_PATH: &str = "%APPDATA%\\LOVE\\_tmp_boxedmino";
-    // #[cfg(target_os = "windows")]
-    // pub const CONFIG_PATH: &str = "%APPDATA%\\Boxedmino";
-
-    // #[cfg(target_os = "macos")]
-    // pub const GAME_SAVE_PATH: &str = "~/Library/Application Support/LOVE/_tmp_boxedmino";
-    // #[cfg(target_os = "macos")]
-    // pub const CONFIG_PATH: &str = "~/Library/Application Support/Boxedmino";
-    
-    // #[cfg(target_os = "linux")]
-    // pub const GAME_SAVE_PATH: &str = "~/.local/share/love/_tmp_boxedmino";
-    // #[cfg(target_os = "linux")]
-    // pub const CONFIG_PATH: &str = "~/.config/Boxedmino";
-    
-    // #[cfg(target_os = "android")]
-    // pub const GAME_SAVE_PATH: &str = "/data/data/org.love2d.android/_tmp_boxedmino";
-    // #[cfg(target_os = "android")]
-    // pub const CONFIG_PATH: &str = "/data/data/org.f26_studio.Boxedmino";
-
     use std::path::PathBuf;
+
+    #[cfg(not(target_os = "windows"))]
     use home::home_dir;
 
     pub fn get_game_save_path() -> PathBuf {
-        #[cfg(target_os = "windows")] {
+        #[cfg(target_os = "windows")]
+        {
             let appdata = std::env::var("APPDATA").expect("AppData directory not found");
-            let path = (appdata + "LOVE\\_tmp_boxedmino").as_str();
+            let path = appdata + "LOVE\\_tmp_boxedmino";
+            let path = path.as_str();
             return PathBuf::from(path);
         }
 
@@ -52,7 +36,7 @@ pub mod paths {
     pub fn get_config_path() -> PathBuf {
         #[cfg(target_os = "windows")] {
             let appdata = std::env::var("APPDATA").expect("AppData directory not found");
-            return PathBuf::from(path)
+            return PathBuf::from(appdata)
                 .join("Boxedmino.json");
         }
 
