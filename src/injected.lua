@@ -1,8 +1,11 @@
 love.filesystem.setIdentity("_tmp_boxedmino");
-love.filesystem.__boxedmino_masked_identity = "love";
-love.filesystem.getIdentity = function()
-    return love.filesystem.__boxedmino_masked_identity;
-end
-love.filesystem.setIdentity = function(identity)
-    love.filesystem.__boxedmino_masked_identity = identity;
+print("Running under sandboxed environment");
+do
+    local identity = "love";
+    love.filesystem.setIdentity = function(new_identity)
+        identity = new_identity;
+    end
+    love.filesystem.getIdentity = function()
+        return identity;
+    end
 end
