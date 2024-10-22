@@ -116,7 +116,7 @@ fn run_game(cfg: &Config) {
     }
 
     if cfg.import_save_on_play {
-        safe_todo(Some("Importing save on play"));
+        overwrite_temp_dir();
     }
 
     let mut command = Command::new("love");
@@ -313,7 +313,7 @@ fn open_main_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
         run_game(&Config::load());
     });
     main_window.set_sandbox_path(
-        consts::paths::get_game_save_path()
+        consts::paths::get_sandboxed_save_path()
             .to_string_lossy()
             .to_string()
             .into()
@@ -324,7 +324,7 @@ fn open_main_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
         copy_text_handled(string.as_str());
     });
     main_window.on_open_save_dir(|| {
-        let path = consts::paths::get_game_save_path();
+        let path = consts::paths::get_sandboxed_save_path();
         if let Err(err) = open::that(&path) {
             open_error_window_safe(
                 Some("Failed to open save directory".to_string()),
@@ -387,7 +387,7 @@ fn is_dir_empty(path: &str) -> bool {
 }
 
 fn clear_temp_dir() {
-    let path = consts::paths::get_game_save_path();
+    let path = consts::paths::get_sandboxed_save_path();
 
     println!("Dangerous operation: Clearing temporary directory at {}", path.to_string_lossy());
 
@@ -426,6 +426,64 @@ fn clear_temp_dir() {
     }
 
     println!("Cleared temporary directory");
+}
+
+fn copy_dir_all(from: &str, to: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let entries = fs::read_dir(from);
+
+    if let Err(e) = entries {
+        return Err(Box::new(e));
+    }
+
+    let entries = entries.unwrap();
+
+    for entry in entries {
+        let entry = entry.expect("Failed to read entry");
+        let path = entry.path();
+        let file_name = path.file_name().unwrap();
+        let new_path = PathBuf::from(to).join(file_name);
+        if path.is_dir() {
+            fs::create_dir_all(&new_path)?;
+            copy_dir_all(&path.to_string_lossy(), &new_path.to_string_lossy())?;
+        } else {
+            fs::copy(&path, &new_path)?;
+        }
+    }
+
+    return Ok(());
+}
+
+fn overwrite_temp_dir() {
+    let sandboxed_path = consts::paths::get_sandboxed_save_path();
+    
+    if !is_dir_empty(sandboxed_path.to_str().unwrap()) {
+        clear_temp_dir();
+    }
+
+    let normal_path = consts::paths::get_normal_save_path();
+
+    if !normal_path.exists() {
+        eprintln!("Could not find normal save directory (inferred location: '{}')", normal_path.to_string_lossy());
+        return;
+    }
+
+    if !sandboxed_path.exists() {
+        fs::create_dir_all(&sandboxed_path)
+            .expect("Failed to create sandboxed save directory");
+    }
+
+    if let Err(e) = copy_dir_all(
+        normal_path.to_str().unwrap(),
+        sandboxed_path.to_str().unwrap()
+    ) {
+        open_error_window_safe(
+            None,
+            Some("Failed to copy save directory".to_string()),
+            Some(format!("Error: {}", e))
+        );
+    }
+
+    println!("Overwritten temporary directory");
 }
 
 fn is_repo_valid(path: &str) -> bool {

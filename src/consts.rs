@@ -4,7 +4,7 @@ pub mod paths {
     #[cfg(not(target_os = "windows"))]
     use home::home_dir;
 
-    pub fn get_game_save_path() -> PathBuf {
+    pub fn get_sandboxed_save_path() -> PathBuf {
         #[cfg(target_os = "windows")]
         {
             let appdata = std::env::var("APPDATA").expect("AppData directory not found");
@@ -30,6 +30,39 @@ pub mod paths {
         #[cfg(target_os = "android")]
         {
             return PathBuf::from("/data/data/org.love2d.android/_tmp_boxedmino");
+        }
+    }
+
+    pub fn get_normal_save_path() -> PathBuf {
+        #[cfg(target_os = "windows")]
+        {
+            let appdata = std::env::var("APPDATA").expect("AppData directory not found");
+
+            // TODO: Check for fused directory
+
+            let path = appdata + "LOVE\\Techmino";
+            let path = path.as_str();
+            return PathBuf::from(path);
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            return home_dir()
+                .expect("Could not find home directory")
+                .join("Library/Application Support/LOVE/Techmino");
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            return home_dir()
+                .expect("Could not find home directory")
+                .join(".local/share/love/Techmino");
+        }
+
+        #[cfg(target_os = "android")]
+        {
+            // TODO: Check for fused directory
+            return PathBuf::from("/data/data/org.love2d.android/Techmino");
         }
     }
 
