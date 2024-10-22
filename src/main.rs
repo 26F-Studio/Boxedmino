@@ -60,6 +60,7 @@ fn main() -> Result<(), slint::PlatformError> {
         !is_repo_valid(&config.game_repo_path)
     {
         run_setup()?;
+        config = conf::Config::load();
     }
 
     if config.use_gui {
