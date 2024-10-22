@@ -70,11 +70,32 @@ fn main() -> Result<(), slint::PlatformError> {
 
 fn print_intro() {
     let version = env!("CARGO_PKG_VERSION");
-    println!("╔═════╗");
-    println!("║ ▄▄  ║  Boxedmino v{version}");
-    println!("║  ▀▀ ║  Sandboxed Techmino runner");
-    println!("╚═════╝");
-    println!("2024 - 26F-Studio | https://github.com/26F-Studio/Boxedmino\n\n");
+    eprintln!("╔═════╗");
+    eprintln!("║ ▄▄  ║  Boxedmino v{version}");
+    eprintln!("║  ▀▀ ║  Sandboxed Techmino runner");
+    eprintln!("╚═════╝");
+    eprintln!("2024 - 26F-Studio | https://github.com/26F-Studio/Boxedmino\n\n");
+}
+
+fn get_versions(repo_path: String) -> Vec<String> {
+    let mut cmd = Command::new("git");
+
+    cmd.arg("tag")
+        .current_dir(repo_path);
+
+    let output = cmd.output()
+        .expect("Failed to run command 'git tag' to retrieve version list");
+
+    let output = String::from_utf8(output.stdout)
+        .expect("Failed to convert 'git tag' UTF-8 output");
+
+    let versions: Vec<String> = output
+        .split("\n")
+        .map(|s| s.to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    return versions;
 }
 
 fn run_game(cfg: &Config) {
@@ -99,14 +120,15 @@ fn run_game(cfg: &Config) {
     }
 
     let mut command = Command::new("love");
-    command.arg(path);
+    command.arg(&path);
     command.status()
         .expect("Running love2d yielded an error");
 
     // Restore main.lua
     let mut command = Command::new("git");
-    command.arg("restore");
-    command.arg("main.lua");
+    command.args(["restore", "main.lua"])
+        .current_dir(&path);
+
     command.status()
         .expect("Failed to restore main.lua using git");
 }
@@ -166,6 +188,18 @@ fn mutate_config_with_cli_args(cfg: &mut Config) {
                     i += 1;
                 }
                 cfg.use_gui = false;
+            }
+            "--version" => {
+                println!("Boxedmino v{}", env!("CARGO_PKG_VERSION"));
+                std::process::exit(0);
+            }
+            "--list-versions" => {
+                let versions = get_versions(cfg.game_repo_path.clone());
+                println!("Available versions:");
+                for version in versions {
+                    println!("- {}", version);
+                }
+                std::process::exit(0);
             }
             _ => {
                 eprintln!("Unknown argument: {}", arg);
@@ -307,16 +341,13 @@ fn open_main_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
         repo_initialized: cfg.repo_initialized,
     });
     main_window.set_is_wayland_used(is_wayland_session());
-    // TODO: set version list
     main_window.set_versions(
         ModelRc::new(
             VecModel::from(
-                vec![
-                    SharedString::from("Debug Version"),
-                    SharedString::from("Unfinished Version"),
-                    SharedString::from("This is unimplemented"),
-                    SharedString::from("v1.0.0"),
-                ]
+                get_versions(cfg.game_repo_path.clone())
+                    .iter()
+                    .map(|s| SharedString::from(s))
+                    .collect::<Vec<SharedString>>()
             )
         )
     );
