@@ -42,6 +42,7 @@ export component MainWindow inherits Window {
     pure callback filter([string], string) -> [string];
 
     in property <string> sandbox_path;
+    in property <string> boxedmino_version: "0.0.0";
     in-out property <[string]> versions: ["Uninitialized A", "Uninitialized B", "Uninitialized C", "Uninitialized D"];
     in-out property <[string]> matched_versions: versions;
     in-out property <string> selected_version: "Uninitialized A";
@@ -288,8 +289,7 @@ export component MainWindow inherits Window {
                             font-size: 1.25rem;
                         }
                         Text {
-                            text: "(C) 26F-Studio - 2024";
-                            accessible-role: AccessibleRole.text;
+                            text: "Version " + boxedmino_version + " | (C) 26F-Studio - 2024";
                             horizontal-alignment: TextHorizontalAlignment.center;
                         }
                         Text {

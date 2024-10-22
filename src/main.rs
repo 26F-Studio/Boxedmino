@@ -32,11 +32,7 @@ mod conf;
 slint::include_modules!();
 
 fn main() -> Result<(), slint::PlatformError> {
-    println!("╔═════╗");
-    println!("║ ▄▄  ║  Boxedmino");
-    println!("║  ▀▀ ║  Sandboxed Techmino runner");
-    println!("╚═════╝");
-    println!("2024 - 26F-Studio | https://github.com/26F-Studio/Boxedmino\n\n");
+    print_intro();
 
     if let Err(missing_dependencies) = check_dependencies() {
         let mut message = "The following dependencies are missing:".to_string();
@@ -64,12 +60,21 @@ fn main() -> Result<(), slint::PlatformError> {
     }
 
     if config.use_gui {
-        open_window(&config)?;
+        open_main_window(&config)?;
     } else {
         run_game(&config);
     }
 
     return Ok(());
+}
+
+fn print_intro() {
+    let version = env!("CARGO_PKG_VERSION");
+    println!("╔═════╗");
+    println!("║ ▄▄  ║  Boxedmino v{version}");
+    println!("║  ▀▀ ║  Sandboxed Techmino runner");
+    println!("╚═════╝");
+    println!("2024 - 26F-Studio | https://github.com/26F-Studio/Boxedmino\n\n");
 }
 
 fn run_game(cfg: &Config) {
@@ -268,7 +273,7 @@ fn safe_todo(feature: Option<&str>) {
     );
 }
 
-fn open_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
+fn open_main_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     let main_window = MainWindow::new()?;
     main_window.on_open_game(|_| {
         run_game(&Config::load());
@@ -279,6 +284,7 @@ fn open_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
             .to_string()
             .into()
     );
+    main_window.set_boxedmino_version(env!("CARGO_PKG_VERSION").into());
     main_window.on_open_link(open_link);
     main_window.on_copy_text(|string| {
         copy_text_handled(string.as_str());
