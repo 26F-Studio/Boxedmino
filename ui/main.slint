@@ -1,4 +1,4 @@
-import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton, ProgressIndicator, LineEdit } from "std-widgets.slint";
+import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton, ProgressIndicator, LineEdit, ListView } from "std-widgets.slint";
 
 struct Settings {
     sandboxed: bool,
@@ -78,24 +78,25 @@ export component MainWindow inherits Window {
                         matched_versions = filter(versions, searched_string);
                     }
                 }
-                version_list_scrollview := ScrollView {
+                version_list_scrollview := ListView {
                     width: 100%;
                     min-height: 8rem;
                     preferred-height: 2626262626rem;
                     padding-left: 8rem;
+                    padding-top: 6px;
+                    padding-bottom: 6px;
 
-                    VerticalLayout {
+
+                    for version in matched_versions: VerticalLayout {
                         width: 100%;
-                        padding-top: 6px;
-                        padding-bottom: 6px;
-                        accessible-role: AccessibleRole.list;
-                        alignment: LayoutAlignment.center;
-
-                        for version in matched_versions: Rectangle {
+                        padding-top: 3px;
+                        padding-bottom: 3px;
+                        accessible-role: AccessibleRole.button;
+                        accessible-checkable: true;
+                        accessible-checked: version == selected_version;
+                        Rectangle {
                             width: 100%;
-                            accessible-role: AccessibleRole.button;
-                            accessible-checkable: true;
-                            accessible-checked: version == selected_version;
+                            height: 100%;
                             background: {
                                 if (version == selected_version) {
                                     return Palette.selection-background;
@@ -110,18 +111,22 @@ export component MainWindow inherits Window {
                             area := TouchArea {
                                 clicked => { selected_version = version; }
                             }
-
-                            Text {
-                                width: parent.width;
-                                text: version;
-                                min-height: 2rem;
-                                horizontal-alignment: TextHorizontalAlignment.left;
-                                vertical-alignment: TextVerticalAlignment.center;
-                                color: {
-                                    if (version == selected_version) {
-                                        return Palette.selection-foreground;
+    
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                Text {
+                                    width: parent.width;
+                                    text: version;
+                                    min-height: 2rem;
+                                    horizontal-alignment: TextHorizontalAlignment.left;
+                                    vertical-alignment: TextVerticalAlignment.center;
+                                    color: {
+                                        if (version == selected_version) {
+                                            return Palette.selection-foreground;
+                                        }
+                                        return Palette.foreground;
                                     }
-                                    return Palette.foreground;
                                 }
                             }
                         }
