@@ -121,8 +121,17 @@ fn run_game(cfg: &Config) {
 
     let mut command = Command::new("love");
     command.arg(&path);
-    command.status()
-        .expect("Running love2d yielded an error");
+    // command.status()
+    //     .expect("Running love2d yielded an error");
+    let status = command.status();
+
+    if let Err(e) = status {
+        open_error_window_safe(
+            Some("Failed to run game".to_string()),
+            Some("An error was yielded from love2d.".to_string()),
+            Some(e.to_string())
+        );
+    }
 
     // Restore main.lua
     let mut command = Command::new("git");
