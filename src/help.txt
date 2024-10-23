@@ -1,0 +1,37 @@
+Usage:
+    boxedmino [...ARGUMENTS]
+
+Note: Running Boxedmino with commandline arguments will immediately
+      start the game without the Boxedmino UI.
+
+
+/// ARGUMENTS ///
+
+--help                      Show this help message
+
+--run                       Run the game immediately without the Boxedmino UI.
+
+--sandboxed                 Trick the game into saving into a temporary folder
+
+--no-sandboxed              Do not trick the game into saving elsewhere
+
+--clear-temp-dir            Clear the temporary directory before
+                            running the game
+
+--no-clear-temp-dir         Do not clear the temporary directory
+                            before running the game
+
+--import-save-on-play       Try to transfer your main save into
+                            the temporary folder
+
+--no-import-save-on-play    Do not transfer your main save into
+                            the temporary folder
+
+--repo-path <PATH>          Specify a repo path to run Techmino from
+
+--version                   Print the Boxedmino version and exit
+
+--list-versions             Print a list of available Techmino versions.
+                            Requires a repo path, either given through
+                            the `--repo-path` argument, or preconfigured
+                            using the GUI.

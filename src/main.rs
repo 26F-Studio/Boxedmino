@@ -139,24 +139,13 @@ fn mutate_config_with_cli_args(cfg: &mut Config) {
     while i < args.len() {
         let arg = args[i].as_str();
         match arg {
-            // TODO: --version for versioning
-            // TODO: --list-versions
+            // TODO: simplify cli arg processing using the `clap` crate
             "--help" => {
-                println!("Note: Running Boxedmino with commandline arguments will immediately");
-                println!("      start the game without the Boxedmino UI.\n");
-                println!("Arguments");
-                println!("--help:                   Show this help message");
-                println!("--sandboxed:              Trick the game into saving into a temporary folder");
-                println!("--no-sandboxed:           Do not trick the game into saving elsewhere");
-                println!("--clear-temp-dir:         Clear the temporary directory before");
-                println!("                          running the game");
-                println!("--no-clear-temp-dir:      Do not clear the temporary directory");
-                println!("                          before running the game");
-                println!("--import-save-on-play:    Try to transfer your main save into");
-                println!("                          the temporary folder");
-                println!("--no-import-save-on-play: Do not transfer your main save into");
-                println!("                          the temporary folder");
+                println!("{}", include_str!("help.txt"));
                 std::process::exit(0);
+            }
+            "--run" => {
+                cfg.use_gui = false;
             }
             "--sandboxed" => {
                 cfg.sandboxed = true;
