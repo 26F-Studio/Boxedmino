@@ -1,9 +1,6 @@
-# Work in Progress
-This project is not complete, and many key features are missing. Below are the planned features for the project.
-
 # Boxedmino
 
-A Rust program to select and run old versions of [Techmino](https://github.com/26F-Studio/Techmino), without worrying about savefile corruption. **When playing through this, your progress will not be saved.**
+A Rust program to select and run old versions of [Techmino](https://github.com/26F-Studio/Techmino), without worrying about savefile corruption. **When playing through this, your progress will not be saved** into the usual directories to prevent corruption.
 
 Use cases:
 1. Explore the game's history without corrupting your current save files.
