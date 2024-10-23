@@ -103,12 +103,12 @@ fn run_game(cfg: &Config) {
 
     if cfg.sandboxed {
         let script = include_str!("injected.lua");
-        let main_lua = path.join("main.lua");
+        let main_lua = path.join("conf.lua");
         let mut main_lua_contents = fs::read_to_string(&main_lua)
-            .expect("Failed to read Techmino's main.lua file");
+            .expect("Failed to read Techmino's conf.lua file");
         main_lua_contents = format!("{}\n{}", script, main_lua_contents);
         fs::write(main_lua, main_lua_contents)
-            .expect("Failed to write to Techmino's main.lua file");
+            .expect("Failed to write to Techmino's conf.lua file");
     }
 
     if cfg.clear_temp_dir {
@@ -133,13 +133,13 @@ fn run_game(cfg: &Config) {
         );
     }
 
-    // Restore main.lua
+    // Restore conf.lua
     let mut command = Command::new("git");
-    command.args(["restore", "main.lua"])
+    command.args(["restore", "conf.lua"])
         .current_dir(&path);
 
     command.status()
-        .expect("Failed to restore main.lua using git");
+        .expect("Failed to restore conf.lua using git");
 }
 
 fn mutate_config_with_cli_args(cfg: &mut Config) {
@@ -149,6 +149,7 @@ fn mutate_config_with_cli_args(cfg: &mut Config) {
         let arg = args[i].as_str();
         match arg {
             // TODO: simplify cli arg processing using the `clap` crate
+            // TODO: --use-version <version> to specify version to run
             "--help" => {
                 println!("{}", include_str!("help.txt"));
                 std::process::exit(0);
@@ -307,9 +308,47 @@ fn safe_todo(feature: Option<&str>) {
 
 fn open_main_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     let main_window = MainWindow::new()?;
-    main_window.on_open_game(|_| {
-        run_game(&Config::load());
+    main_window.on_open_game(|version| {
+        let cfg = Config::load();
+
+        if !version.is_empty() {
+
+            let mut reset_cmd = Command::new("git")
+                .args(["restore", "."])
+                .current_dir(cfg.game_repo_path.clone())
+                .status();
+
+            if let Err(e) = reset_cmd {
+                open_error_window_safe(
+                    Some("Failed to reset repository".to_string()),
+                    Some("Failed to reset repository before switching versions".to_string()),
+                    Some(format!("Git: {e}"))
+                );
+                return;
+            }
+
+
+            let mut cmd = Command::new("git");
+            let status = cmd
+                .args(["checkout", version.as_str()])
+                .current_dir(cfg.game_repo_path.clone())
+                .status();
+
+            if let Err(e) = status {
+                open_error_window_safe(
+                    Some("Failed to switch versions".to_string()),
+                    Some(
+                        format!("Failed to switch to version '{version}'")
+                    ),
+                    Some(format!("Git: {e}"))
+                );
+                return;
+            }
+        }
+
+        run_game(&cfg);
     });
+    main_window.set_selected_version("".into());
     main_window.set_sandbox_path(
         consts::paths::get_sandboxed_save_path()
             .to_string_lossy()
@@ -498,7 +537,7 @@ fn is_repo_valid(path: &str) -> bool {
 
     let files = files.unwrap();
 
-    // Check for .git and main.lua
+    // Check for .git and conf.lua
     let mut has_git = false;
     let mut has_main_lua = false;
 
@@ -508,7 +547,7 @@ fn is_repo_valid(path: &str) -> bool {
         let file_name = file_name.to_str().unwrap_or("");
         if file_name == ".git" {
             has_git = true;
-        } else if file_name == "main.lua" {
+        } else if file_name == "conf.lua" {
             has_main_lua = true;
         }
     }

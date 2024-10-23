@@ -6,6 +6,8 @@ do
         identity = new_identity;
     end
     love.filesystem.getIdentity = function()
+        print("getIdentity call intercepted, identity masked; running under sandboxed environment");
         return identity;
     end
 end
+
