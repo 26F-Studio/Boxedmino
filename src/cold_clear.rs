@@ -22,8 +22,6 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
 
     let dl_thread = thread::spawn(move || {
         async move {
-            println!("CC DL Thread Started"); // DEBUG
-
             let url = paths::COLD_CLEAR_DOWNLOAD_URL;
             let save_path = paths::get_cold_clear_download_path();
 
@@ -99,15 +97,24 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
 
             tx.send(LoadingIPCMessage::Finish)
                 .expect("Failed to send IPC message");
-
-            println!("CC DL Thread Finished"); // DEBUG
         }
     });
 
     let window_weak = window.as_weak();
     let window_thread = thread::spawn(move || {
         loop {
-            let val = rx.recv().expect("Failed to receive IPC message");
+            let val = rx.recv();
+
+            if let Err(_) = val {
+                // Stream ended because transmitter no longer exists
+                window_weak.upgrade_in_event_loop(|window| {
+                    window.set_finished(true);
+                    window.hide().expect("Failed to hide ColdClear loading window");
+                }).expect("Error upgrading weak ref on event loop while breaking out");
+                break;
+            }
+            
+            let val = val.unwrap();
 
             println!("{:?}", val);
 
@@ -141,5 +148,5 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
 
     window.run().expect("Failed to show ColdClear loading window");
 
-    return Ok(());
+    return window_thread.join().expect("Failed to join window thread");
 }
