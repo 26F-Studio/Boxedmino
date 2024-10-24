@@ -26,6 +26,8 @@ use std::process::{Command, Stdio};
 use slint::{ModelRc, SharedString, VecModel};
 use copypasta::ClipboardProvider;
 use open;
+
+mod cold_clear;
 mod consts;
 mod conf;
 
@@ -289,6 +291,10 @@ fn open_error_window_safe(
     }
 }
 
+#[deprecated(
+    note = "safe_todo used - do not forget to implement the feature"
+)]
+#[allow(dead_code)]
 fn safe_todo(feature: Option<&str>) {
     let message =
         if let Some(feature) = feature {
@@ -313,7 +319,7 @@ fn open_main_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
 
         if !version.is_empty() {
 
-            let mut reset_cmd = Command::new("git")
+            let reset_cmd = Command::new("git")
                 .args(["restore", "."])
                 .current_dir(cfg.game_repo_path.clone())
                 .status();

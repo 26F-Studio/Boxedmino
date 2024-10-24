@@ -1,16 +1,18 @@
 [package]
 name = "boxedmino"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
 copypasta = "0.10.1"
 home = "0.5.9"
 open = "5.3.0"
+reqwest = "0.12.8"
 rfd = "0.15.0"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
 slint = "1.8.0"
+tokio = "1.41.0"
 
 [build-dependencies]
 slint-build = "1.8.0"

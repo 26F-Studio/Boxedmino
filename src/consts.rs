@@ -70,21 +70,22 @@ pub mod paths {
         #[cfg(target_os = "windows")] {
             let appdata = std::env::var("APPDATA").expect("AppData directory not found");
             return PathBuf::from(appdata)
-                .join("Boxedmino.json");
+                .join("Boxedmino")
+                .join("config.json");
         }
 
         #[cfg(target_os = "macos")]
         {
             return home_dir()
                 .expect("Could not find home directory")
-                .join("Library/Application Support/Boxedmino.json");
+                .join("Library/Application Support/Boxedmino/config.json");
         }
 
         #[cfg(target_os = "linux")]
         {
             return home_dir()
                 .expect("Could not find home directory")
-                .join(".local/share/Boxedmino.json");
+                .join(".local/share/Boxedmino/config.json");
         }
 
         #[cfg(target_os = "android")]
@@ -92,6 +93,63 @@ pub mod paths {
             return PathBuf::from("/data/data/org.f26_studio.Boxedmino/config.json");
         }
     }
+
+    pub fn get_cold_clear_download_path() -> PathBuf {
+        #[cfg(target_os = "windows")] {
+            let appdata = std::env::var("APPDATA").expect("AppData directory not found");
+            return PathBuf::from(appdata)
+                .join("Boxedmino")
+                .join("cc");
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            let home = home_dir();
+
+            if home.is_none() {
+                return PathBuf::from("/tmp/Boxedmino/cc");
+            }
+
+            return home.unwrap()
+                .join("Library/Application Support/Boxedmino/cc");
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            let home = home_dir();
+
+            if home.is_none() {
+                return PathBuf::from("/tmp/Boxedmino/cc");
+            }
+
+            return home.unwrap()
+                .join(".local/share/Boxedmino/cc");
+        }
+    }
+
+    pub const COLD_CLEAR_DOWNLOAD_URL: &str =
+        if cfg!(target_os = "windows") {
+            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/Windows.zip"
+        } else if cfg!(target_os = "macos") {
+            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/macOS.zip"
+        } else if cfg!(target_os = "linux") {
+            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/Linux.zip"
+        } else if cfg!(target_os = "android") {
+            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/Android.zip"
+        } else if cfg!(target_os = "ios") {
+            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/iOS.zip"
+        } else {
+            #[cfg(not(any(
+                target_os = "windows",
+                target_os = "macos",
+                target_os = "linux",
+                target_os = "android",
+                target_os = "ios"
+            )))]
+            compile_error!("Unsupported operating system: {}", std::env::consts::OS);
+
+            unreachable!();
+        };
     
     #[cfg(not(any(
         target_os = "windows",

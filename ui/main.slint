@@ -539,3 +539,58 @@ export component GitCloneWaitWindow inherits Window {
         }
     }
 }
+
+export component ColdClearWaitWindow inherits Window {
+    callback dismiss();
+    in property <bool> finished: false;
+    in property <bool> indeterminate: false;
+    in property <float> progress: 0;
+
+    title: "Boxedmino - Downloading ColdClear";
+
+    VerticalLayout {
+        alignment: LayoutAlignment.center;
+        padding: 1rem;
+        spacing: 1.25rem;
+        Text {
+            text: "ColdClear download in progress";
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        Text {
+            text: {
+                if (finished) {
+                    "Cold Clear download finished! Close this window to proceed.";
+                } else {
+                    "We are currently running downloading ColdClear, " +
+                    "the AI used in Techmino's bots. " +
+                    "Please wait until the operation finishes.";
+                }
+            }
+            width: 25rem;
+            height: 6rem;
+        }
+        ProgressIndicator {
+            indeterminate: indeterminate;
+            progress: { if (finished) { 1 } else { progress } };
+        }
+        HorizontalLayout {
+            alignment: LayoutAlignment.center;
+            Rectangle {
+                width: 6rem;
+                height: 3rem;
+                border-color: {
+                    if (finished) {
+                        return @radial-gradient(circle, 
+                            transparent 0%,
+                            transparent 92.6%,
+                            yellow 92.7%
+                        );
+                    }
+                    return transparent;
+                }
+                border-width: 2px;
+            }
+        }
+    }
+}
