@@ -2,6 +2,7 @@ use std::io::Write;
 use std::thread;
 use std::time::Duration;
 use std::sync::mpsc;
+use tokio::runtime::Runtime;
 use crate::consts::paths;
 
 slint::include_modules!();
@@ -21,7 +22,13 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
         .expect("Failed to open ColdClear loading window");
 
     let dl_thread = thread::spawn(move || {
-        async move {
+        println!("A");
+
+        let rt = Runtime::new()
+            .expect("Failed to create Tokio runtime");
+
+        rt.block_on(async move {
+            println!("B");
             let url = paths::COLD_CLEAR_DOWNLOAD_URL;
             let save_path = paths::get_cold_clear_download_path();
 
@@ -30,6 +37,8 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
                 .get(url)
                 .send()
                 .await;
+            println!("C");
+
 
             if let Err(e) = response {
                 tx.send(LoadingIPCMessage::Error(e))
@@ -38,6 +47,8 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
             }
 
             let mut response = response.unwrap();
+
+            println!("D");
 
             let total_size = response
                 .content_length()
@@ -97,7 +108,7 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
 
             tx.send(LoadingIPCMessage::Finish)
                 .expect("Failed to send IPC message");
-        }
+        });
     });
 
     let window_weak = window.as_weak();
