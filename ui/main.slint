@@ -543,7 +543,7 @@ export component GitCloneWaitWindow inherits Window {
 export component ColdClearWaitWindow inherits Window {
     callback dismiss();
     in property <bool> finished: false;
-    in property <bool> indeterminate: false;
+    in property <bool> indeterminate: true;
     in property <float> progress: 0;
 
     title: "Boxedmino - Downloading ColdClear";
@@ -567,6 +567,7 @@ export component ColdClearWaitWindow inherits Window {
                     "Please wait until the operation finishes.";
                 }
             }
+            wrap: word-wrap;
             width: 25rem;
             height: 6rem;
         }

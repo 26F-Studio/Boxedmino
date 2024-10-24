@@ -6,6 +6,7 @@ use crate::consts::paths;
 
 slint::include_modules!();
 
+#[derive(Debug)]
 enum LoadingIPCMessage {
     AdvanceTo(f32),
     SetDeterminacy(bool),
@@ -13,17 +14,16 @@ enum LoadingIPCMessage {
     Error(reqwest::Error)
 }
 
-pub async fn download_cold_clear() -> Result<(), reqwest::Error> {
+pub fn download_cold_clear() -> Result<(), reqwest::Error> {
     let (tx, rx) = mpsc::channel::<LoadingIPCMessage>();
 
     let window = ColdClearWaitWindow::new()
         .expect("Failed to open ColdClear loading window");
 
-    window.show().expect("Failed to show ColdClear loading window");
-
-
-    thread::spawn(move || {
+    let dl_thread = thread::spawn(move || {
         async move {
+            println!("CC DL Thread Started"); // DEBUG
+
             let url = paths::COLD_CLEAR_DOWNLOAD_URL;
             let save_path = paths::get_cold_clear_download_path();
 
@@ -99,29 +99,47 @@ pub async fn download_cold_clear() -> Result<(), reqwest::Error> {
 
             tx.send(LoadingIPCMessage::Finish)
                 .expect("Failed to send IPC message");
+
+            println!("CC DL Thread Finished"); // DEBUG
         }
     });
 
-    loop {
-        let val = rx.recv().expect("Failed to receive IPC message");
-        
-        match val {
-            LoadingIPCMessage::AdvanceTo(progress) => {
-                window.set_progress(progress);
-            }
-            LoadingIPCMessage::SetDeterminacy(determinate) => {
-                window.set_indeterminate(!determinate);
-            }
-            LoadingIPCMessage::Finish => { break; }
-            LoadingIPCMessage::Error(e) => {
-                return Err(e);
+    let window_weak = window.as_weak();
+    let window_thread = thread::spawn(move || {
+        loop {
+            let val = rx.recv().expect("Failed to receive IPC message");
+
+            println!("{:?}", val);
+
+            match val {
+                LoadingIPCMessage::AdvanceTo(progress) => {
+                    // window.set_progress(progress);
+                    window_weak.upgrade_in_event_loop(move |window| {
+                        window.set_progress(progress);
+                    }).expect("Error upgrading weak ref on event loop while setting progress");
+                }
+                LoadingIPCMessage::SetDeterminacy(determinate) => {
+                    window_weak.upgrade_in_event_loop(move |window| {
+                        window.set_indeterminate(!determinate)
+                    }).expect("Error upgrading weak ref on event loop while setting determinacy");
+                }
+                LoadingIPCMessage::Finish => {
+                    window_weak.upgrade_in_event_loop(|window| {
+                        window.set_finished(true);
+                        window.hide().expect("Failed to hide ColdClear loading window");
+                    }).expect("Error upgrading weak ref on event loop while finishing");
+                    break;
+                }
+                LoadingIPCMessage::Error(e) => {
+                    return Err(e);
+                }
             }
         }
-    }
 
-    window.set_finished(true);
+        return Ok(());
+    });
 
-    window.hide().expect("Failed to hide ColdClear loading window");
+    window.run().expect("Failed to show ColdClear loading window");
 
     return Ok(());
 }

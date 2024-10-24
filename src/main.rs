@@ -34,6 +34,8 @@ mod conf;
 slint::include_modules!();
 
 fn main() -> Result<(), slint::PlatformError> {
+    cold_clear::download_cold_clear().unwrap(); return Ok(()); // DEBUG
+
     print_intro();
 
     if let Err(missing_dependencies) = check_dependencies() {
