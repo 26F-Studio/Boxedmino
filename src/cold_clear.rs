@@ -1,18 +1,54 @@
 use std::io::Write;
 use std::thread;
-use std::time::Duration;
+use std::time::{Instant, Duration};
 use std::sync::mpsc;
+use slint::SharedString;
 use tokio::runtime::Runtime;
 use crate::consts::paths;
 
 slint::include_modules!();
 
-#[derive(Debug)]
 enum LoadingIPCMessage {
-    AdvanceTo(f32),
+    AdvanceTo(
+        /// The amount of bytes that have been downloaded.
+        i32,
+        /// The overall download rate in bytes per second
+        i32,
+        /// The ETA for the download
+        SharedString
+    ),
+    SetTotal(i32),
     SetDeterminacy(bool),
     Finish,
     Error(reqwest::Error)
+}
+
+fn format_bytes(bytes: i32) -> SharedString {
+    let bytes = bytes as f64;
+    if bytes < 1e3 {
+        return format!("{bytes:.0} bytes").into();
+    } else if bytes < 1e6 {
+        return format!("{:.2} KB", bytes / 1e3).into();
+    } else if bytes < 1e9 {
+        return format!("{:.2} MB", bytes / 1e6).into();
+    } else {
+        return format!("{:.2} GB", bytes / 1e9).into();
+    }
+}
+
+fn format_time(secs: i32) -> String {
+    if secs < 60 {
+        return format!("{secs:.0} seconds");
+    } else if secs < 3600 {
+        return format!("{:.0}:{:2.0}", secs / 60, secs % 60)
+    } else {
+        return format!(
+            "{:.0}:{:2.0}:{:2.0}",
+            secs / 3600,
+            secs % 3600 / 60,
+            secs % 60
+        );
+    }
 }
 
 pub fn download_cold_clear() -> Result<(), reqwest::Error> {
@@ -21,24 +57,23 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
     let window = ColdClearWaitWindow::new()
         .expect("Failed to open ColdClear loading window");
 
-    let dl_thread = thread::spawn(move || {
-        println!("A");
+    window.on_format_bytes(format_bytes);
 
+    let dl_thread = thread::spawn(move || {
         let rt = Runtime::new()
             .expect("Failed to create Tokio runtime");
 
         rt.block_on(async move {
-            println!("B");
             let url = paths::COLD_CLEAR_DOWNLOAD_URL;
             let save_path = paths::get_cold_clear_download_path();
+
+            let begin_time = Instant::now();
 
             let client = reqwest::Client::new();
             let response = client
                 .get(url)
                 .send()
                 .await;
-            println!("C");
-
 
             if let Err(e) = response {
                 tx.send(LoadingIPCMessage::Error(e))
@@ -48,16 +83,20 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
 
             let mut response = response.unwrap();
 
-            println!("D");
-
             let total_size = response
                 .content_length()
                 .unwrap_or(0);
 
+            let total_size = TryInto::<i32>::try_into(total_size)
+                .expect("Failed to convert u64 to i32");
+
+            tx.send(LoadingIPCMessage::SetTotal(total_size))
+                .expect("Failed to send IPC message");
+
             tx.send(LoadingIPCMessage::SetDeterminacy(total_size != 0))
                 .expect("Failed to send IPC message");
 
-            let mut downloaded_size = 0;
+            let mut downloaded_size = 0 as i32;
 
             loop {
                 // poll the `response` and get its progress percentage
@@ -77,11 +116,26 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
 
                 let chunk = chunk.unwrap();
 
-                downloaded_size += chunk.len() as u64;
+                downloaded_size += chunk.len() as i32;
 
-                let progress = downloaded_size as f32 / total_size as f32;
+                let elapsed = begin_time.elapsed();
 
-                tx.send(LoadingIPCMessage::AdvanceTo(progress))
+                let dl_rate = (
+                    downloaded_size as f64 /
+                    elapsed.as_secs_f64()
+                ) as i32;
+                
+                let remaining_size = total_size - downloaded_size;
+                let eta_secs = remaining_size / dl_rate;
+
+                // TODO
+                let advance_message = LoadingIPCMessage::AdvanceTo(
+                    downloaded_size,
+                    dl_rate,
+                    format_time(eta_secs).into()
+                );
+
+                tx.send(advance_message)
                     .expect("Failed to send IPC message");
 
                 thread::sleep(Duration::from_millis(200));
@@ -127,14 +181,18 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
             
             let val = val.unwrap();
 
-            println!("{:?}", val);
-
             match val {
-                LoadingIPCMessage::AdvanceTo(progress) => {
-                    // window.set_progress(progress);
+                LoadingIPCMessage::AdvanceTo(bytes, rate, eta) => {
                     window_weak.upgrade_in_event_loop(move |window| {
-                        window.set_progress(progress);
+                        window.set_bytes_done(bytes);
+                        window.set_dl_rate(rate);
+                        window.set_dl_eta(eta);
                     }).expect("Error upgrading weak ref on event loop while setting progress");
+                }
+                LoadingIPCMessage::SetTotal(bytes) => {
+                    window_weak.upgrade_in_event_loop(move |window| {
+                        window.set_bytes_total(bytes);
+                    }).expect("Error upgrading weak ref on event loop while setting total");
                 }
                 LoadingIPCMessage::SetDeterminacy(determinate) => {
                     window_weak.upgrade_in_event_loop(move |window| {
@@ -158,6 +216,8 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
     });
 
     window.run().expect("Failed to show ColdClear loading window");
+
+    // TODO: If window is closed early, stop download
 
     return window_thread.join().expect("Failed to join window thread");
 }

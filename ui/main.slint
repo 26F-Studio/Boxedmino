@@ -542,9 +542,13 @@ export component GitCloneWaitWindow inherits Window {
 
 export component ColdClearWaitWindow inherits Window {
     callback dismiss();
+    pure callback format_bytes(int) -> string;
     in property <bool> finished: false;
     in property <bool> indeterminate: true;
-    in property <float> progress: 0;
+    in property <int> bytes_done: 0;
+    in property <int> bytes_total: 0;
+    in property <int> dl_rate: 0;
+    in property <string> dl_eta: "Uninitialized seconds";
 
     title: "Boxedmino - Downloading ColdClear";
 
@@ -571,26 +575,36 @@ export component ColdClearWaitWindow inherits Window {
             width: 25rem;
             height: 6rem;
         }
-        ProgressIndicator {
-            indeterminate: indeterminate;
-            progress: { if (finished) { 1 } else { progress } };
-        }
-        HorizontalLayout {
-            alignment: LayoutAlignment.center;
-            Rectangle {
-                width: 6rem;
-                height: 3rem;
-                border-color: {
-                    if (finished) {
-                        return @radial-gradient(circle, 
-                            transparent 0%,
-                            transparent 92.6%,
-                            yellow 92.7%
-                        );
-                    }
-                    return transparent;
+        VerticalLayout {
+            spacing: 0.75rem;
+            HorizontalLayout {
+                alignment: space-between;
+
+                Text {
+                    text: format_bytes(bytes_done);
                 }
-                border-width: 2px;
+                Text {
+                    text: format_bytes(bytes_total);
+                }
+            }
+            ProgressIndicator {
+                // indeterminate: indeterminate;
+                indeterminate: indeterminate || bytes_total == 0;
+                progress: {
+                    if (finished) { 1 } else {
+                        bytes_done / bytes_total
+                    }
+                };
+            }
+            HorizontalLayout {
+                alignment: space-between;
+
+                Text {
+                    text: format_bytes(dl_rate) + " / sec";
+                }
+                Text {
+                    text: "ETA: " + dl_eta;
+                }
             }
         }
     }
