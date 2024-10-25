@@ -4,6 +4,33 @@ pub mod paths {
     #[cfg(not(target_os = "windows"))]
     use home::home_dir;
 
+    pub fn get_conf_dir_path() -> PathBuf {
+        #[cfg(target_os = "windows")] {
+            let appdata = std::env::var("APPDATA").expect("AppData directory not found");
+            return PathBuf::from(appdata)
+                .join("Boxedmino")
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            return home_dir()
+                .expect("Could not find home directory")
+                .join("Library/Application Support/Boxedmino");
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            return home_dir()
+                .expect("Could not find home directory")
+                .join(".local/share/Boxedmino");
+        }
+
+        #[cfg(target_os = "android")]
+        {
+            return PathBuf::from("/data/data/org.f26_studio.Boxedmino");
+        }
+    }
+
     pub fn get_sandboxed_save_path() -> PathBuf {
         #[cfg(target_os = "windows")]
         {
@@ -67,64 +94,11 @@ pub mod paths {
     }
 
     pub fn get_config_path() -> PathBuf {
-        #[cfg(target_os = "windows")] {
-            let appdata = std::env::var("APPDATA").expect("AppData directory not found");
-            return PathBuf::from(appdata)
-                .join("Boxedmino")
-                .join("config.json");
-        }
-
-        #[cfg(target_os = "macos")]
-        {
-            return home_dir()
-                .expect("Could not find home directory")
-                .join("Library/Application Support/Boxedmino/config.json");
-        }
-
-        #[cfg(target_os = "linux")]
-        {
-            return home_dir()
-                .expect("Could not find home directory")
-                .join(".local/share/Boxedmino/config.json");
-        }
-
-        #[cfg(target_os = "android")]
-        {
-            return PathBuf::from("/data/data/org.f26_studio.Boxedmino/config.json");
-        }
+        return get_conf_dir_path().join("config.json");
     }
 
     pub fn get_cold_clear_download_path() -> PathBuf {
-        #[cfg(target_os = "windows")] {
-            let appdata = std::env::var("APPDATA").expect("AppData directory not found");
-            return PathBuf::from(appdata)
-                .join("Boxedmino")
-                .join("cc");
-        }
-
-        #[cfg(target_os = "macos")]
-        {
-            let home = home_dir();
-
-            if home.is_none() {
-                return PathBuf::from("/tmp/Boxedmino/cc");
-            }
-
-            return home.unwrap()
-                .join("Library/Application Support/Boxedmino/cc");
-        }
-
-        #[cfg(target_os = "linux")]
-        {
-            let home = home_dir();
-
-            if home.is_none() {
-                return PathBuf::from("/tmp/Boxedmino/cc");
-            }
-
-            return home.unwrap()
-                .join(".local/share/Boxedmino/cc");
-        }
+        return get_conf_dir_path().join("cold_clear.zip");
     }
 
     pub const COLD_CLEAR_DOWNLOAD_URL: &str =
