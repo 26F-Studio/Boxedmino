@@ -541,7 +541,7 @@ export component GitCloneWaitWindow inherits Window {
 }
 
 export component ColdClearWaitWindow inherits Window {
-    callback dismiss();
+    callback interrupt();
     pure callback format_bytes(int) -> string;
     in property <bool> finished: false;
     in property <bool> indeterminate: true;
@@ -549,6 +549,7 @@ export component ColdClearWaitWindow inherits Window {
     in property <int> bytes_total: 0;
     in property <int> dl_rate: 0;
     in property <string> dl_eta: "Uninitialized seconds";
+    in-out property <bool> interrupted: false;
 
     title: "Boxedmino - Downloading ColdClear";
 
@@ -605,6 +606,13 @@ export component ColdClearWaitWindow inherits Window {
                 Text {
                     text: "ETA: " + dl_eta;
                 }
+            }
+        }
+        StandardButton {
+            kind: cancel;
+            clicked => {
+                interrupted = true;
+                interrupt();
             }
         }
     }

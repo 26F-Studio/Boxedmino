@@ -1,7 +1,7 @@
 use std::io::Write;
 use std::thread;
 use std::time::{Instant, Duration};
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, Mutex};
 use slint::SharedString;
 use tokio::runtime::Runtime;
 use crate::consts::paths;
@@ -59,7 +59,8 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
 
     window.on_format_bytes(format_bytes);
 
-    let dl_thread = thread::spawn(move || {
+    let window_weak = window.as_weak();
+    thread::spawn(move || {
         let rt = Runtime::new()
             .expect("Failed to create Tokio runtime");
 
@@ -98,8 +99,24 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
 
             let mut downloaded_size = 0 as i32;
 
+            let interrupted = Arc::new(Mutex::new(false));
+
             loop {
-                // poll the `response` and get its progress percentage
+                let interrupted_clone = interrupted.clone();
+                window_weak.upgrade_in_event_loop(move |window| {
+                    let mut interrupted = interrupted_clone.lock().unwrap();
+
+                    *interrupted = window.get_interrupted();
+                }).expect("Failed to upgrade weak ref on interrupt check");
+
+                if interrupted.lock().unwrap().clone() {
+                    tx.send(LoadingIPCMessage::Finish)
+                        .expect("Failed to send IPC message");
+                    println!("ColdClear download interrupted!");
+                    return;
+                }
+                
+                // poll the `response` and get its progress
                 let chunk = response.chunk().await;
 
                 if let Err(e) = chunk {
@@ -215,9 +232,16 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
         return Ok(());
     });
 
+    let window_weak = window.as_weak();
+    window.on_interrupt(move || {
+        window_weak
+            .unwrap().window().hide()
+            .expect("Failed to hide ColdClear loading window");
+    });
+
     window.run().expect("Failed to show ColdClear loading window");
 
-    // TODO: If window is closed early, stop download
+    window.set_interrupted(true);
 
     return window_thread.join().expect("Failed to join window thread");
 }
