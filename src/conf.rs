@@ -16,6 +16,7 @@ pub struct Config {
     pub repo_initialized: bool,
     pub game_repo_path: String,
     pub use_gui: bool,
+    pub use_cold_clear: bool,
 }
 
 impl Config {
@@ -27,6 +28,7 @@ impl Config {
             repo_initialized: false,
             game_repo_path: "".to_string(),
             use_gui: true,
+            use_cold_clear: true,
         }
     }
     pub fn load() -> Self {

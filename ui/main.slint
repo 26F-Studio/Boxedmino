@@ -6,6 +6,7 @@ struct Settings {
     import_save_on_play: bool,
     repo_initialized: bool,
     game_repo_path: string,
+    use_cold_clear: bool,
 }
 
 component BoxedminoBanner {
@@ -185,6 +186,7 @@ export component MainWindow inherits Window {
                     }
                     Switch {
                         checked: settings.clear_temp_dir;
+                        enabled: settings.sandboxed;
                         toggled => { settings.clear_temp_dir = self.checked; }
                     }
                 }
@@ -204,6 +206,7 @@ export component MainWindow inherits Window {
                     }
                     Switch {
                         checked: settings.import_save_on_play;
+                        enabled: settings.sandboxed && settings.clear_temp_dir;
                         toggled => { settings.import_save_on_play = self.checked; }
                     }
                 }
@@ -265,6 +268,22 @@ export component MainWindow inherits Window {
                             text: "Browse...";
                             clicked => { browse_for_repo(); }
                         }
+                    }
+                }
+                HorizontalLayout {
+                    VerticalLayout {
+                        Text {
+                            text: "Cold Clear AI";
+                            font-size: 1.25rem;
+                        }
+                        Text {
+                            text: "Import Techmino's AI library to the sandbox.";
+                            font-size: 0.96rem;
+                        }
+                    }
+                    Switch {
+                        checked: settings.use_cold_clear;
+                        toggled => { settings.use_cold_clear = self.checked; }
                     }
                 }
                 VerticalLayout {

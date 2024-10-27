@@ -121,6 +121,10 @@ fn run_game(cfg: &Config) {
         overwrite_temp_dir();
     }
 
+    if cfg.use_cold_clear {
+        safe_todo(Some("Importing Cold Clear"));
+    }
+
     let mut command = Command::new("love");
     command.arg(&path);
     // command.status()
@@ -382,6 +386,7 @@ fn open_main_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
         import_save_on_play: cfg.import_save_on_play,
         game_repo_path: cfg.game_repo_path.clone().into(),
         repo_initialized: cfg.repo_initialized,
+        use_cold_clear: cfg.use_cold_clear,
     });
     main_window.set_is_wayland_used(is_wayland_session());
     main_window.set_versions(
@@ -411,6 +416,7 @@ fn open_main_window(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
             repo_initialized: settings.repo_initialized,
             game_repo_path: settings.game_repo_path.as_str().to_string(),
             use_gui: true,
+            use_cold_clear: settings.use_cold_clear,
         };
         config.save();
     });
