@@ -5,9 +5,8 @@ use crate::conf::Config;
 use crate::game;
 use crate::git;
 use crate::error_window;
-use slint::{ModelRc, VecModel, SharedString};
-
-slint::include_modules!();
+use crate::slint_types::{Settings, MainWindow};
+use slint::{ModelRc, VecModel, SharedString, ModelExt, ComponentHandle};
 
 pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     let main_window = MainWindow::new()?;
@@ -64,14 +63,7 @@ pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
             );
         }
     });
-    main_window.set_settings(Settings {
-        sandboxed: cfg.sandboxed,
-        clear_temp_dir: cfg.clear_temp_dir,
-        import_save_on_play: cfg.import_save_on_play,
-        game_repo_path: cfg.game_repo_path.clone().into(),
-        repo_initialized: cfg.repo_initialized,
-        use_cold_clear: cfg.use_cold_clear,
-    });
+    main_window.set_settings(cfg.clone().into());
     main_window.set_is_wayland_used(is_wayland_session());
     main_window.set_versions(
         ModelRc::new(

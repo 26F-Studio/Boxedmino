@@ -1,12 +1,12 @@
 use crate::error_window;
+use crate::slint_types::SetupWindow;
 use crate::git;
 use crate::conf;
+use crate::dirs;
 use rfd::FileDialog;
 use std::cell::RefCell;
-use crate::dirs;
 use std::rc::Rc;
-
-slint::include_modules!();
+use slint::ComponentHandle;
 
 pub fn run_setup() -> Result<(), slint::PlatformError> {
     // Wrap `setup_finished` and `setup_window` in Rc<RefCell> for shared access.

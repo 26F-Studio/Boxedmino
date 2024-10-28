@@ -1,10 +1,8 @@
-use crate::dirs;
+use crate::slint_types::GitCloneWaitWindow;
 use std::fs;
 use std::io;
 use std::process::{Command, ExitStatus, Stdio};
-use slint::{SharedString};
-
-slint::include_modules!();
+use slint::{SharedString, ComponentHandle};
 
 pub fn tags(repo_path: &str) -> Vec<String> {
     let mut cmd = Command::new("git");

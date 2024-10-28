@@ -3,10 +3,10 @@ use std::thread;
 use std::time::{Instant, Duration};
 use std::sync::{mpsc, Arc, Mutex};
 use slint::SharedString;
+use slint::ComponentHandle;
 use tokio::runtime::Runtime;
 use crate::dirs::paths;
-
-slint::include_modules!();
+use crate::slint_types::ColdClearWaitWindow;
 
 enum LoadingIPCMessage {
     AdvanceTo(

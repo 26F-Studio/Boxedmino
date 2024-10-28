@@ -1,9 +1,8 @@
 use std::fs;
 use crate::dirs::paths;
 use crate::git;
+use crate::slint_types::Settings;
 use serde::{Serialize, Deserialize};
-
-slint::include_modules!();
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
@@ -145,5 +144,32 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         return Self::new();
+    }
+}
+
+impl From<Settings> for Config {
+    fn from(settings: Settings) -> Self {
+        Self {
+            sandboxed: settings.sandboxed,
+            clear_temp_dir: settings.clear_temp_dir,
+            import_save_on_play: settings.import_save_on_play,
+            repo_initialized: settings.repo_initialized,
+            game_repo_path: settings.game_repo_path.as_str().to_string(),
+            use_gui: true,
+            use_cold_clear: settings.use_cold_clear,
+        }
+    }
+}
+
+impl From<Config> for Settings {
+    fn from(cfg: Config) -> Self {
+        Self {
+            sandboxed: cfg.sandboxed,
+            clear_temp_dir: cfg.clear_temp_dir,
+            import_save_on_play: cfg.import_save_on_play,
+            game_repo_path: cfg.game_repo_path.clone().into(),
+            repo_initialized: cfg.repo_initialized,
+            use_cold_clear: cfg.use_cold_clear,
+        }
     }
 }

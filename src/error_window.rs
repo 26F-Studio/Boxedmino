@@ -1,4 +1,5 @@
-slint::include_modules!();
+use crate::slint_types::ErrorWindow;
+use slint::ComponentHandle;
 
 pub fn open(
     title: Option<String>,

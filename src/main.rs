@@ -26,7 +26,7 @@ mod git;
 mod main_window;
 mod error_window;
 mod setup;
-
+mod slint_types;
 fn main() -> Result<(), slint::PlatformError> {
     print_intro();
 
