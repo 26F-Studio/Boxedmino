@@ -3,7 +3,7 @@ use crate::git;
 use crate::conf;
 use rfd::FileDialog;
 use std::cell::RefCell;
-use std::fs;
+use crate::dirs;
 use std::rc::Rc;
 
 slint::include_modules!();
@@ -28,7 +28,7 @@ pub fn run_setup() -> Result<(), slint::PlatformError> {
         let valid = git::is_repo_valid(path.as_str());
         window_clone.set_repo_valid(valid);
 
-        let empty = is_dir_empty(path.as_str());
+        let empty = dirs::is_dir_empty(path.as_str());
         window_clone.set_dir_empty(empty);
     });
 
@@ -63,15 +63,4 @@ pub fn run_setup() -> Result<(), slint::PlatformError> {
     } else {
         panic!("Setup closed prematurely");
     }
-}
-
-// TODO: Deduplicate
-fn is_dir_empty(path: &str) -> bool {
-    let files = fs::read_dir(path);
-    if let Err(_) = files {
-        return false;
-    }
-
-    let files = files.unwrap();
-    return files.count() == 0;
 }

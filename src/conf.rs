@@ -1,5 +1,5 @@
 use std::fs;
-use crate::consts::paths;
+use crate::dirs::paths;
 use crate::git;
 use serde::{Serialize, Deserialize};
 

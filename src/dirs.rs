@@ -1,3 +1,58 @@
+use std::fs;
+
+pub fn clear_temp_dir() {
+    let path = crate::dirs::paths::get_sandboxed_save_path();
+
+    println!("Dangerous operation: Clearing temporary directory at {}", path.to_string_lossy());
+
+    if !path.exists() {
+        return;
+    }
+
+    let entries = fs::read_dir(path);
+
+    if let Err(_) = entries {
+        return;
+    }
+
+    let entries = entries.unwrap();
+
+    for entry in entries {
+        let entry = entry.expect("Failed to read entry");
+        let path = entry.path();
+        if path.is_dir() {
+            fs::remove_dir_all(&path)
+                .expect(
+                    format!(
+                        "Failed to remove directory {}",
+                        path.to_string_lossy()
+                    ).as_str()
+                )
+        } else {
+            fs::remove_file(&path)
+                .expect(
+                    format!(
+                        "Failed to remove file {}",
+                        path.to_string_lossy()
+                    ).as_str()
+                )
+        }
+    }
+
+    println!("Cleared temporary directory");
+}
+
+
+pub fn is_dir_empty(path: &str) -> bool {
+    let files = fs::read_dir(path);
+    if let Err(_) = files {
+        return false;
+    }
+
+    let files = files.unwrap();
+    return files.count() == 0;
+}
+
 pub mod paths {
     use std::path::PathBuf;
 

@@ -1,5 +1,5 @@
 use crate::conf::Config;
-use crate::consts;
+use crate::dirs;
 use crate::error_window;
 use crate::git;
 use std::fs;
@@ -20,7 +20,7 @@ pub fn run(cfg: &Config) {
     }
 
     if cfg.clear_temp_dir {
-        clear_temp_dir();
+        dirs::clear_temp_dir();
     }
 
     if cfg.import_save_on_play {
@@ -46,49 +46,6 @@ pub fn run(cfg: &Config) {
 
     git::restore(&cfg.game_repo_path)
         .expect("Failed to restore repository using git");
-}
-
-// TODO: Deduplicate
-fn clear_temp_dir() {
-    let path = consts::paths::get_sandboxed_save_path();
-
-    println!("Dangerous operation: Clearing temporary directory at {}", path.to_string_lossy());
-
-    if !path.exists() {
-        return;
-    }
-
-    let entries = fs::read_dir(path);
-
-    if let Err(_) = entries {
-        return;
-    }
-
-    let entries = entries.unwrap();
-
-    for entry in entries {
-        let entry = entry.expect("Failed to read entry");
-        let path = entry.path();
-        if path.is_dir() {
-            fs::remove_dir_all(&path)
-                .expect(
-                    format!(
-                        "Failed to remove directory {}",
-                        path.to_string_lossy()
-                    ).as_str()
-                )
-        } else {
-            fs::remove_file(&path)
-                .expect(
-                    format!(
-                        "Failed to remove file {}",
-                        path.to_string_lossy()
-                    ).as_str()
-                )
-        }
-    }
-
-    println!("Cleared temporary directory");
 }
 
 fn copy_dir_all(from: &str, to: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -117,13 +74,13 @@ fn copy_dir_all(from: &str, to: &str) -> Result<(), Box<dyn std::error::Error + 
 }
 
 fn overwrite_temp_dir() {
-    let sandboxed_path = consts::paths::get_sandboxed_save_path();
+    let sandboxed_path = dirs::paths::get_sandboxed_save_path();
     
-    if !is_dir_empty(sandboxed_path.to_str().unwrap()) {
-        clear_temp_dir();
+    if !dirs::is_dir_empty(sandboxed_path.to_str().unwrap()) {
+        dirs::clear_temp_dir();
     }
 
-    let normal_path = consts::paths::get_normal_save_path();
+    let normal_path = dirs::paths::get_normal_save_path();
 
     if !normal_path.exists() {
         eprintln!("Could not find normal save directory (inferred location: '{}')", normal_path.to_string_lossy());
@@ -147,16 +104,4 @@ fn overwrite_temp_dir() {
     }
 
     println!("Overwritten temporary directory");
-}
-
-
-// TODO: Deduplicate
-fn is_dir_empty(path: &str) -> bool {
-    let files = fs::read_dir(path);
-    if let Err(_) = files {
-        return false;
-    }
-
-    let files = files.unwrap();
-    return files.count() == 0;
 }

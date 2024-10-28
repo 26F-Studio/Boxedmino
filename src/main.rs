@@ -16,17 +16,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::fs;
-use std::path::PathBuf;
-use std::rc::Rc;
-use std::cell::RefCell;
 use std::process::{Command, Stdio};
-use slint::{ModelRc, SharedString, VecModel};
-use copypasta::ClipboardProvider;
-use open;
 
 mod cold_clear;
-mod consts;
+mod dirs;
 mod conf;
 mod game;
 mod git;

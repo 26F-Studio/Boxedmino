@@ -4,7 +4,7 @@ use std::time::{Instant, Duration};
 use std::sync::{mpsc, Arc, Mutex};
 use slint::SharedString;
 use tokio::runtime::Runtime;
-use crate::consts::paths;
+use crate::dirs::paths;
 
 slint::include_modules!();
 
@@ -145,7 +145,6 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
                 let remaining_size = total_size - downloaded_size;
                 let eta_secs = remaining_size / dl_rate;
 
-                // TODO
                 let advance_message = LoadingIPCMessage::AdvanceTo(
                     downloaded_size,
                     dl_rate,

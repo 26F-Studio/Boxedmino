@@ -1,12 +1,11 @@
 use open as file_open;
 use copypasta::ClipboardProvider;
-use crate::consts;
+use crate::dirs;
 use crate::conf::Config;
 use crate::game;
 use crate::git;
 use crate::error_window;
 use slint::{ModelRc, VecModel, SharedString};
-use std::fs;
 
 slint::include_modules!();
 
@@ -45,7 +44,7 @@ pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     });
     main_window.set_selected_version("".into());
     main_window.set_sandbox_path(
-        consts::paths::get_sandboxed_save_path()
+        dirs::paths::get_sandboxed_save_path()
             .to_string_lossy()
             .to_string()
             .into()
@@ -56,7 +55,7 @@ pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
         copy_text_handled(string.as_str());
     });
     main_window.on_open_save_dir(|| {
-        let path = consts::paths::get_sandboxed_save_path();
+        let path = dirs::paths::get_sandboxed_save_path();
         if let Err(err) = file_open::that(&path) {
             error_window::open_safe(
                 Some("Failed to open save directory".to_string()),
@@ -84,7 +83,7 @@ pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
             )
         )
     );
-    main_window.on_clear_save_dir(clear_temp_dir);
+    main_window.on_clear_save_dir(dirs::clear_temp_dir);
     main_window.on_filter(|arr: ModelRc<SharedString>, search: SharedString| -> ModelRc<SharedString> {
         let search = search.as_str().to_lowercase();
         let filtered = arr.filter(
@@ -144,47 +143,4 @@ fn open_link(url: slint::SharedString) {
             Some(format!("URL: {}", url))
         );
     });
-}
-
-// TODO: Deduplicate
-fn clear_temp_dir() {
-    let path = consts::paths::get_sandboxed_save_path();
-
-    println!("Dangerous operation: Clearing temporary directory at {}", path.to_string_lossy());
-
-    if !path.exists() {
-        return;
-    }
-
-    let entries = fs::read_dir(path);
-
-    if let Err(_) = entries {
-        return;
-    }
-
-    let entries = entries.unwrap();
-
-    for entry in entries {
-        let entry = entry.expect("Failed to read entry");
-        let path = entry.path();
-        if path.is_dir() {
-            fs::remove_dir_all(&path)
-                .expect(
-                    format!(
-                        "Failed to remove directory {}",
-                        path.to_string_lossy()
-                    ).as_str()
-                )
-        } else {
-            fs::remove_file(&path)
-                .expect(
-                    format!(
-                        "Failed to remove file {}",
-                        path.to_string_lossy()
-                    ).as_str()
-                )
-        }
-    }
-
-    println!("Cleared temporary directory");
 }

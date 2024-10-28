@@ -1,4 +1,4 @@
-use crate::consts;
+use crate::dirs;
 use std::fs;
 use std::io;
 use std::process::{Command, ExitStatus, Stdio};
@@ -243,48 +243,4 @@ pub fn is_repo_valid(path: &str) -> bool {
     }
 
     return has_git && has_main_lua;
-}
-
-// TODO: Deduplicate
-
-fn clear_temp_dir() {
-    let path = consts::paths::get_sandboxed_save_path();
-
-    println!("Dangerous operation: Clearing temporary directory at {}", path.to_string_lossy());
-
-    if !path.exists() {
-        return;
-    }
-
-    let entries = fs::read_dir(path);
-
-    if let Err(_) = entries {
-        return;
-    }
-
-    let entries = entries.unwrap();
-
-    for entry in entries {
-        let entry = entry.expect("Failed to read entry");
-        let path = entry.path();
-        if path.is_dir() {
-            fs::remove_dir_all(&path)
-                .expect(
-                    format!(
-                        "Failed to remove directory {}",
-                        path.to_string_lossy()
-                    ).as_str()
-                )
-        } else {
-            fs::remove_file(&path)
-                .expect(
-                    format!(
-                        "Failed to remove file {}",
-                        path.to_string_lossy()
-                    ).as_str()
-                )
-        }
-    }
-
-    println!("Cleared temporary directory");
 }
