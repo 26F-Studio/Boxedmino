@@ -80,9 +80,9 @@ pub enum CliInstruction {
 pub static INSTRUCTION: OnceCell<Option<CliInstruction>> = OnceCell::new();
 
 fn main() -> Result<(), slint::PlatformError> {
-    INSTRUCTION.set(Cli::parse().command).unwrap(); // TODO: Parse command
-
     print_intro();
+    
+    INSTRUCTION.set(Cli::parse().command).unwrap(); // TODO: Parse command
 
     if let Err(missing_dependencies) = check_dependencies() {
         let mut message = "The following dependencies are missing:".to_string();
