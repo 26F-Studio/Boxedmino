@@ -5,7 +5,7 @@ use crate::conf::Config;
 use crate::game;
 use crate::git;
 use crate::error_window;
-use crate::slint_types::{Settings, MainWindow};
+use crate::slint_types::{MainWindow};
 use slint::{ModelRc, VecModel, SharedString, ModelExt, ComponentHandle};
 
 pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {

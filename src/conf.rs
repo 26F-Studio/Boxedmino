@@ -50,71 +50,7 @@ impl Config {
     }
     pub fn load() -> Self {
         let mut cfg = Self::load_from_file();
-
-        let args: Vec<String> = std::env::args().collect();
-        let mut i = 1;
-        while i < args.len() {
-            let arg = args[i].as_str();
-            match arg {
-                // TODO: simplify cli arg processing using the `clap` crate
-                // TODO: --use-version <version> to specify version to run
-                "--help" => {
-                    println!("{}", include_str!("help.txt"));
-                    std::process::exit(0);
-                }
-                "--run" => {
-                    cfg.use_gui = false;
-                }
-                "--sandboxed" => {
-                    cfg.sandboxed = true;
-                    cfg.use_gui = false;
-                }
-                "--no-sandbox" => {
-                    cfg.sandboxed = false;
-                    cfg.use_gui = false;
-                }
-                "--clear-temp-dir" => {
-                    cfg.clear_temp_dir = true;
-                    cfg.use_gui = false;
-                }
-                "--no-clear-temp-dir" => {
-                    cfg.clear_temp_dir = false;
-                    cfg.use_gui = false;
-                }
-                "--import-save-on-play" => {
-                    cfg.import_save_on_play = true;
-                    cfg.use_gui = false;
-                }
-                "--no-import-save-on-play" => {
-                    cfg.import_save_on_play = false;
-                    cfg.use_gui = false;
-                }
-                "--repo-path" => {
-                    if i + 1 < args.len() {
-                        cfg.game_repo_path = args[i + 1].clone();
-                        i += 1;
-                    }
-                    cfg.use_gui = false;
-                }
-                "--version" => {
-                    println!("Boxedmino v{}", env!("CARGO_PKG_VERSION"));
-                    std::process::exit(0);
-                }
-                "--list-versions" => {
-                    let versions = git::tags(&cfg.game_repo_path);
-                    println!("Available versions:");
-                    for version in versions {
-                        println!("- {}", version);
-                    }
-                    std::process::exit(0);
-                }
-                _ => {
-                    eprintln!("Unknown argument: {}", arg);
-                    std::process::exit(1);
-                }
-            }
-            i += 1;
-        }
+        // TODO: mutate cfg based on cli args
 
         return cfg;
     }

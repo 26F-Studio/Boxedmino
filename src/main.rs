@@ -17,6 +17,7 @@
  */
 
 use std::process::{Command, Stdio};
+use clap::{Parser, Subcommand};
 
 mod cold_clear;
 mod dirs;
@@ -27,8 +28,49 @@ mod main_window;
 mod error_window;
 mod setup;
 mod slint_types;
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Cli { 
+    #[command(subcommand)]
+    command: Option<CliInstruction>,
+}
+
+#[derive(Subcommand, Clone)]
+pub enum CliInstruction {
+    #[clap(about = "Lists available versions of the game")]
+    ListVersions {
+        #[arg(short, long)]
+        /// Path to the game repository
+        repo_path: Option<String>,
+    },
+
+    #[clap(about = "Runs the game")]
+    Run {
+        #[arg(short, long)]
+        /// The version of the game to run. Accepts git tags and commit hashes.
+        version: Option<String>,
+
+        #[arg(short, long)]
+        /// Path to the game's Git repository. It must contain a main.lua file and a .git folder.
+        repo_path: Option<String>,
+
+        #[arg(short, long)]
+        /// Set configuration flags. Each flag is one character.
+        /// A capital letter denotes "on", a lowercase letter denotes "off".
+        /// The flags are:
+        /// - `S` [Sandbox]: If on, the game will be tricked to save to a temporary directory.
+        /// - `C` [Clear]  : If on, the temporary directory will be cleared before running the game.
+        /// - `I` [Import] : If on, Boxedmino will try to import your main save to the temporary save directory.
+        /// - `A` [AI]     : If on, Techmino's AI (ColdClear) will be enabled.
+        flags: Option<String>,
+    },
+}
+
 fn main() -> Result<(), slint::PlatformError> {
     print_intro();
+
+    let instruction = Cli::parse().command; // TODO: Parse command
 
     if let Err(missing_dependencies) = check_dependencies() {
         let mut message = "The following dependencies are missing:".to_string();
