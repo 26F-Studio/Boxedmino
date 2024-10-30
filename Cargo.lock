@@ -632,6 +632,7 @@ dependencies = [
  "clap",
  "copypasta",
  "home",
+ "once_cell",
  "open",
  "reqwest",
  "rfd",

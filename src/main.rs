@@ -18,6 +18,7 @@
 
 use std::process::{Command, Stdio};
 use clap::{Parser, Subcommand};
+use once_cell::sync::OnceCell;
 
 mod cold_clear;
 mod dirs;
@@ -30,13 +31,22 @@ mod setup;
 mod slint_types;
 
 #[derive(Parser)]
-#[command(version, about, long_about = None)]
+#[command(version, about, long_about =
+"Boxedmino is a version manager and sandboxing app used to run Techmino.
+
+It provides a high-level abstraction over Git and love2d, and can inject Lua sandboxing code
+to trick the game into saving to a temporary directory, so you can play old versions
+of Techmino without worrying about your main save file getting corrupted.
+
+If you run this program without any command-line arguments, the GUI will open up.
+You can run the game immediately using `boxedmino run`.
+For more information on running the game, use `boxedmino help run`.")]
 struct Cli { 
     #[command(subcommand)]
     command: Option<CliInstruction>,
 }
 
-#[derive(Subcommand, Clone)]
+#[derive(Subcommand, Clone, Debug)]
 pub enum CliInstruction {
     #[clap(about = "Lists available versions of the game")]
     ListVersions {
@@ -67,10 +77,12 @@ pub enum CliInstruction {
     },
 }
 
-fn main() -> Result<(), slint::PlatformError> {
-    print_intro();
+pub static INSTRUCTION: OnceCell<Option<CliInstruction>> = OnceCell::new();
 
-    let instruction = Cli::parse().command; // TODO: Parse command
+fn main() -> Result<(), slint::PlatformError> {
+    INSTRUCTION.set(Cli::parse().command).unwrap(); // TODO: Parse command
+
+    print_intro();
 
     if let Err(missing_dependencies) = check_dependencies() {
         let mut message = "The following dependencies are missing:".to_string();

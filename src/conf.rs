@@ -1,6 +1,6 @@
 use std::fs;
-use crate::dirs::paths;
-use crate::git;
+use crate::{dirs::paths, CliInstruction};
+use crate::INSTRUCTION;
 use crate::slint_types::Settings;
 use serde::{Serialize, Deserialize};
 
@@ -17,6 +17,19 @@ pub struct Config {
     pub game_repo_path: String,
     pub use_gui: bool,
     pub use_cold_clear: bool,
+}
+
+/// [See definition for flags](crate::CliInstruction::Run::flags)
+fn get_cli_config_flags() -> Option<&'static str> {
+    let instruction = INSTRUCTION.get()?;
+
+    let instruction = instruction.as_ref()?;
+
+    return match instruction {
+        CliInstruction::Run { flags, .. } =>
+            Some(flags.as_ref()?.as_str()),
+        _ => None
+    };
 }
 
 impl Config {
@@ -50,7 +63,25 @@ impl Config {
     }
     pub fn load() -> Self {
         let mut cfg = Self::load_from_file();
-        // TODO: mutate cfg based on cli args
+
+        if let Some(flags) = get_cli_config_flags() {
+            for byte in flags.trim().chars() {
+                match byte {
+                    's' => cfg.sandboxed = false,
+                    'S' => cfg.sandboxed = true,
+                    'c' => cfg.clear_temp_dir = false,
+                    'C' => cfg.clear_temp_dir = true,
+                    'i' => cfg.import_save_on_play = false,
+                    'I' => cfg.import_save_on_play = true,
+                    'a' => cfg.use_cold_clear = false,
+                    'A' => cfg.use_cold_clear = true,
+                    _ => {
+                        eprintln!("Invalid config flag: {:?}", byte);
+                        std::process::exit(1);
+                    }
+                }
+            }
+        }
 
         return cfg;
     }
