@@ -115,6 +115,17 @@ fn main() -> Result<(), slint::PlatformError> {
     if config.use_gui {
         main_window::open(&config)?;
     } else {
+        let version = get_version_from_cli();
+
+        if let Some(v) = version {
+            git::checkout(
+                &config.game_repo_path,
+                v
+            ).expect(
+                format!("Failed to run `git checkout {v}`").as_str()
+            );
+        }
+
         game::run(&config);
     }
 
@@ -168,6 +179,18 @@ fn check_dependencies() -> Result<(), Vec<String>> {
     return Ok(());
 }
 
+fn get_version_from_cli() -> Option<&'static str> {
+    let instruction = INSTRUCTION
+        .get()
+        .expect("`INSTRUCTION` static var not set!")
+        .as_ref()?;
+
+    if let CliInstruction::Run { version, .. } = instruction {
+        return version.as_deref();
+    }
+
+    return None;
+}
 
 
 #[deprecated(

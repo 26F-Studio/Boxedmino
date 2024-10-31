@@ -1,6 +1,6 @@
 use std::fs;
 use crate::{dirs::paths, CliInstruction};
-use crate::INSTRUCTION;
+use crate::{git, INSTRUCTION};
 use crate::slint_types::Settings;
 use serde::{Serialize, Deserialize};
 
@@ -29,6 +29,19 @@ fn get_cli_config_flags() -> Option<&'static str> {
         CliInstruction::Run { flags, .. } =>
             Some(flags.as_ref()?.as_str()),
         _ => None
+    };
+}
+
+fn get_cli_repo_path() -> Option<&'static str> {
+    let instruction = INSTRUCTION.get()?;
+
+    let instruction = instruction.as_ref()?;
+
+    return match instruction {
+        CliInstruction::Run { repo_path, .. } =>
+            Some(repo_path.as_ref()?.as_str()),
+        CliInstruction::ListVersions { repo_path } =>
+            Some(repo_path.as_ref()?.as_str()),
     };
 }
 
@@ -65,6 +78,7 @@ impl Config {
         let mut cfg = Self::load_from_file();
 
         if let Some(flags) = get_cli_config_flags() {
+            cfg.use_gui = false;
             for byte in flags.trim().chars() {
                 match byte {
                     's' => cfg.sandboxed = false,
@@ -81,6 +95,19 @@ impl Config {
                     }
                 }
             }
+        }
+
+        if let Some(path) = get_cli_repo_path() {
+            if git::is_repo_valid(path) {
+                cfg.repo_initialized = true;
+            } else {
+                eprintln!("Invalid repository path: {path:?}\n{}",
+                    "Make sure the directory exists and contains a main.lua file and a .git folder."
+                );
+                std::process::exit(1);
+            }
+
+            cfg.game_repo_path = path.to_string();
         }
 
         return cfg;
