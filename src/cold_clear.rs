@@ -7,6 +7,7 @@ use slint::ComponentHandle;
 use tokio::runtime::Runtime;
 use crate::dirs::paths;
 use crate::slint_types::ColdClearWaitWindow;
+use zip::ZipArchive;
 
 enum LoadingIPCMessage {
     AdvanceTo(
@@ -245,4 +246,85 @@ pub fn download_cold_clear(version: &str) -> Result<(), reqwest::Error> {
     window.set_interrupted(true);
 
     return window_thread.join().expect("Failed to join window thread");
+}
+
+fn get_path_score(path: &str) -> i8 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        let pos_keywords = [
+            "x64",
+            "amd64",
+            "x86_64"
+        ];
+
+        for keyword in pos_keywords.iter() {
+            if path.contains(keyword) {
+                return 1;
+            }
+        }
+
+        let neg_keywords = [
+            "x86",
+            "i386",
+            "i686"
+        ];
+
+        for keyword in neg_keywords.iter() {
+            if path.contains(keyword) {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
+    #[cfg(target_arch = "x86")]
+    {
+        let neg_keywords = [
+            "x64",
+            "amd64",
+            "x86_64"
+        ];
+
+        for keyword in neg_keywords.iter() {
+            if path.contains(keyword) {
+                return -1;
+            }
+        }
+
+        let pos_keywords = [
+            "x86",
+            "i386",
+            "i686"
+        ];
+
+        for keyword in pos_keywords.iter() {
+            if path.contains(keyword) {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    #[allow(unreachable_code)]{
+        return 0;
+    }
+}
+
+pub fn unpack_cold_clear(version: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let save_path = paths::get_cold_clear_download_path(version);
+    let save_path = save_path.as_path();
+
+    if !save_path.exists() {
+        download_cold_clear(version)?;
+    }
+
+    let save_path = save_path.to_str().unwrap();
+
+    let zip_file = std::fs::File::open(save_path)?;
+
+    let mut zip_archive = ZipArchive::new(zip_file)?;
+
+    todo!(); // TODO: Extract, flatten, select (path_score) and move library files
 }
