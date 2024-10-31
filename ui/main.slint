@@ -286,22 +286,22 @@ export component MainWindow inherits Window {
                         }
                     }
                 }
-                // HorizontalLayout {
-                //     VerticalLayout {
-                //         Text {
-                //             text: "Cold Clear AI";
-                //             font-size: 1.25rem;
-                //         }
-                //         Text {
-                //             text: "Import Techmino's AI library to the sandbox.";
-                //             font-size: 0.96rem;
-                //         }
-                //     }
-                //     Switch {
-                //         checked: settings.use_cold_clear;
-                //         toggled => { settings.use_cold_clear = self.checked; }
-                //     }
-                // }
+                HorizontalLayout {
+                    VerticalLayout {
+                        Text {
+                            text: "Cold Clear AI";
+                            font-size: 1.25rem;
+                        }
+                        Text {
+                            text: "Import Techmino's AI library to the sandbox.";
+                            font-size: 0.96rem;
+                        }
+                    }
+                    Switch {
+                        checked: settings.use_cold_clear;
+                        toggled => { settings.use_cold_clear = self.checked; }
+                    }
+                }
                 VerticalLayout {
                     padding-top: 8px;
                     Button {
