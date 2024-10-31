@@ -57,22 +57,26 @@ pub enum CliInstruction {
 
     #[clap(about = "Runs the game")]
     Run {
-        #[arg(short, long)]
         /// The version of the game to run. Accepts git tags and commit hashes.
+        #[arg(short, long)]
         version: Option<String>,
 
-        #[arg(short, long)]
         /// Path to the game's Git repository. It must contain a main.lua file and a .git folder.
+        #[arg(short, long)]
         repo_path: Option<String>,
 
-        #[arg(short, long)]
         /// Set configuration flags. Each flag is one character.
         /// A capital letter denotes "on", a lowercase letter denotes "off".
         /// The flags are:
-        /// - `S` [Sandbox]: If on, the game will be tricked to save to a temporary directory.
-        /// - `C` [Clear]  : If on, the temporary directory will be cleared before running the game.
-        /// - `I` [Import] : If on, Boxedmino will try to import your main save to the temporary save directory.
-        /// - `A` [AI]     : If on, Techmino's AI (ColdClear) will be enabled.
+        ///   `S` [Sandbox]
+        ///      If on, the game will be tricked to save to a temporary directory.
+        ///   `C` [Clear]
+        ///      If on, the temporary directory will be cleared before running the game.
+        ///   `I` [Import]
+        ///      If on, Boxedmino will try to import your main save to the temporary save directory.
+        ///   `A` [AI]
+        ///      If on, Techmino's AI (ColdClear) will be enabled. [not yet implemented]
+        #[arg(short, long, verbatim_doc_comment)]
         flags: Option<String>,
     },
 }
