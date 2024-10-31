@@ -152,33 +152,35 @@ pub mod paths {
         return get_conf_dir_path().join("config.json");
     }
 
-    pub fn get_cold_clear_download_path() -> PathBuf {
-        return get_conf_dir_path().join("cold_clear.zip");
+    pub fn get_cold_clear_download_path(version: &str) -> PathBuf {
+        return get_conf_dir_path()
+            .join("cold_clear")
+            .join(version.to_string() + ".zip");
     }
 
-    pub const COLD_CLEAR_DOWNLOAD_URL: &str =
-        if cfg!(target_os = "windows") {
-            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/Windows.zip"
-        } else if cfg!(target_os = "macos") {
-            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/macOS.zip"
-        } else if cfg!(target_os = "linux") {
-            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/Linux.zip"
-        } else if cfg!(target_os = "android") {
-            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/Android.zip"
-        } else if cfg!(target_os = "ios") {
-            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/11.4.2/iOS.zip"
-        } else {
-            #[cfg(not(any(
-                target_os = "windows",
-                target_os = "macos",
-                target_os = "linux",
-                target_os = "android",
-                target_os = "ios"
-            )))]
-            compile_error!("Unsupported operating system: {}", std::env::consts::OS);
-
-            unreachable!();
+    pub fn get_cold_clear_download_url(version: &str) -> String {
+        let file_name = match std::env::consts::OS {
+            "windows" => "Windows.zip",
+            "macos" => "macOS.zip",
+            "linux" => "Linux.zip",
+            "android" => "Android.zip",
+            "ios" => "iOS.zip",
+            _ => unreachable!()
         };
+
+        #[cfg(not(any(
+            target_os = "windows",
+            target_os = "macos",
+            target_os = "linux",
+            target_os = "android",
+            target_os = "ios"
+        )))]
+        compile_error!("Unsupported operating system: {}", std::env::consts::OS);
+
+        return format!(
+            "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/{version}/{file_name}"
+        );
+    }
     
     #[cfg(not(any(
         target_os = "windows",

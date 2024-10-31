@@ -51,7 +51,7 @@ fn format_time(secs: i32) -> String {
     }
 }
 
-pub fn download_cold_clear() -> Result<(), reqwest::Error> {
+pub fn download_cold_clear(version: &str) -> Result<(), reqwest::Error> {
     let (tx, rx) = mpsc::channel::<LoadingIPCMessage>();
 
     let window = ColdClearWaitWindow::new()
@@ -60,14 +60,16 @@ pub fn download_cold_clear() -> Result<(), reqwest::Error> {
     window.on_format_bytes(format_bytes);
 
     let window_weak = window.as_weak();
+    let version = version.to_owned();
     thread::spawn(move || {
         let rt = Runtime::new()
             .expect("Failed to create Tokio runtime");
 
-        rt.block_on(async move {
-            let url = paths::COLD_CLEAR_DOWNLOAD_URL;
-            let save_path = paths::get_cold_clear_download_path();
+        let version = version.as_str();
+        let url = paths::get_cold_clear_download_url(version);
+        let save_path = paths::get_cold_clear_download_path(version);
 
+        rt.block_on(async move {
             let begin_time = Instant::now();
 
             let client = reqwest::Client::new();
