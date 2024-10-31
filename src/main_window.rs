@@ -8,10 +8,44 @@ use crate::error_window;
 use crate::slint_types::MainWindow;
 use slint::{ModelRc, VecModel, SharedString, ModelExt, ComponentHandle};
 
+fn get_versions(repo_path: &str, include_commits: bool) -> ModelRc<SharedString> {
+    let mut versions = git::tags(repo_path)
+        .iter()
+        .map(|s| SharedString::from(s))
+        .collect::<Vec<SharedString>>();
+
+    if include_commits {
+        let commits = git::get_commits(repo_path)
+            .iter()
+            .map(|(hash, name)| format!("[Commit {hash}: {name}]"))
+            .map(|s| SharedString::from(s))
+            .collect::<Vec<SharedString>>();
+
+        versions.extend(commits);
+    }
+
+    return ModelRc::new(
+        VecModel::from(versions)
+    );
+}
+
+/// Gets the commit hash of the formatted commit name.
+/// If the name is not in a valid format, the original string will be returned.
+fn try_unwrap_version_name(name: &str) -> String {
+    if name.starts_with("[Commit ") {
+        let hash_end = name.find(':').unwrap_or(name.len());
+        return name[8..hash_end].to_string();
+    } else {
+        return name.to_string();
+    }
+}
+
 pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     let main_window = MainWindow::new()?;
     main_window.on_open_game(|version| {
         let cfg = Config::load();
+
+        let version = try_unwrap_version_name(&version);
 
         if !version.is_empty() {
             let reset_cmd = git::restore(&cfg.game_repo_path);
@@ -41,7 +75,6 @@ pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
 
         game::run(&cfg);
     });
-    main_window.set_selected_version("".into());
     main_window.set_sandbox_path(
         dirs::paths::get_sandboxed_save_path()
             .to_string_lossy()
@@ -66,15 +99,11 @@ pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     main_window.set_settings(cfg.clone().into());
     main_window.set_is_wayland_used(is_wayland_session());
     main_window.set_versions(
-        ModelRc::new(
-            VecModel::from(
-                git::tags(&cfg.game_repo_path)
-                    .iter()
-                    .map(|s| SharedString::from(s))
-                    .collect::<Vec<SharedString>>()
-            )
-        )
+        get_versions(&cfg.game_repo_path, false)
     );
+    main_window.on_update_version_list(|include_commits| {
+        get_versions(Config::load().game_repo_path.as_str(), include_commits)
+    });
     main_window.on_clear_save_dir(dirs::clear_temp_dir);
     main_window.on_filter(|arr: ModelRc<SharedString>, search: SharedString| -> ModelRc<SharedString> {
         let search = search.as_str().to_lowercase();

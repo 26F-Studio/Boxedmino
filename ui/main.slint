@@ -1,4 +1,5 @@
 import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton, ProgressIndicator, LineEdit, ListView } from "std-widgets.slint";
+import "fonts/JetBrainsMono-Bold.ttf";
 
 struct Settings {
     sandboxed: bool,
@@ -32,21 +33,21 @@ component BoxedminoBanner {
 }
 
 export component MainWindow inherits Window {
-    callback open_link(string);
-    callback open_game(string);
-    callback copy_text(string);
-    callback clear_save_dir();
-    callback open_save_dir();
+    pure callback open_link(string);
+    pure callback open_game(string);
+    pure callback copy_text(string);
+    pure callback clear_save_dir();
+    pure callback open_save_dir();
     callback browse_for_repo();
+    //                    show_commits -> versions
+    pure callback update_version_list(bool) -> [string];
     pure callback apply_settings(Settings);
-    //              array, searched_str -> matched
+    //                 array, searched_str -> matched
     pure callback filter([string], string) -> [string];
 
     in property <string> sandbox_path;
     in property <string> boxedmino_version: "0.0.0";
     in-out property <[string]> versions: ["Uninitialized A", "Uninitialized B", "Uninitialized C", "Uninitialized D"];
-    in-out property <[string]> matched_versions: versions;
-    in-out property <string> selected_version: "Uninitialized A";
     in-out property <Settings> settings: {
         sandboxed: true,
         clear_temp_dir: true,
@@ -54,6 +55,8 @@ export component MainWindow inherits Window {
         game_repo_path: "",
     };
     in property <bool> is_wayland_used: false;
+    private property <[string]> matched_versions: versions;
+    private property <string> selected_version: "";
     private property <string> searched_string: "";
 
     title: "Boxedmino";
@@ -122,6 +125,9 @@ export component MainWindow inherits Window {
                                     min-height: 2rem;
                                     horizontal-alignment: TextHorizontalAlignment.left;
                                     vertical-alignment: TextVerticalAlignment.center;
+                                    font-family: "JetBrains Mono";
+                                    font-weight: 700;
+                                    font-size: 1.1rem;
                                     color: {
                                         if (version == selected_version) {
                                             return Palette.selection-foreground;
@@ -133,9 +139,19 @@ export component MainWindow inherits Window {
                         }
                     }
                 }
+                HorizontalLayout {
+                    Text {
+                        text: "Advanced: Show commits";
+                    }
+                    Switch {
+                        toggled => {
+                            versions = update_version_list(self.checked);
+                            matched_versions = filter(versions, searched_string);
+                        }
+                    }
+                }
                 Button {
                     text: "Open game";
-                    // TODO: Warning if old version of game is run unsandboxed
                     clicked => { open_game(selected_version); }
                 }
             }

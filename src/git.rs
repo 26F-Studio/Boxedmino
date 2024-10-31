@@ -25,6 +25,30 @@ pub fn tags(repo_path: &str) -> Vec<String> {
     return versions;
 }
 
+/// Returns the hash and name of every commit in the repo.
+pub fn get_commits(repo_path: &str) -> Vec<(String, String)> {
+    let mut cmd = Command::new("git");
+
+    cmd.args(["log", "--all", "--oneline", "--reflog"])
+        .current_dir(repo_path);
+
+    let output = cmd.output()
+        .expect("Failed to run command 'git log --all --oneline --reflog' to retrieve commit list");
+
+    let output = String::from_utf8(output.stdout)
+        .expect("Failed to convert 'git log --all --oneline --reflog' UTF-8 output");
+
+    let commits: Vec<(String, String)> = output
+        .split("\n")
+        .filter(|s| !s.is_empty())
+        .map(|s| s.split_once(" "))
+        .map(|s| s.expect("Failed to split commit hash and name"))
+        .map(|(hash, name)| (hash.to_string(), name.to_string()))
+        .collect();
+
+    return commits;
+}
+
 pub fn restore(repo_path: &str) -> io::Result<ExitStatus> {
     return Command::new("git")
         .args(["restore", "."])
