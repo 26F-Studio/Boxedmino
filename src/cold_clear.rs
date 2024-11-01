@@ -1,4 +1,8 @@
+use std::ffi::{OsStr, OsString};
 use std::io::Write;
+use std::fs::{self, File};
+use std::path::{PathBuf};
+use std::collections::HashMap;
 use std::thread;
 use std::time::{Instant, Duration};
 use std::sync::{mpsc, Arc, Mutex};
@@ -312,19 +316,106 @@ fn get_path_score(path: &str) -> i8 {
     }
 }
 
-pub fn unpack_cold_clear(version: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let save_path = paths::get_cold_clear_download_path(version);
-    let save_path = save_path.as_path();
+fn pick_files_to_move(path: &PathBuf) -> Result<Vec<PathBuf>, Box<dyn std::error::Error>> {
+    // Traverse through the directories and pick files for flattenning
+    // If identical filename, choose one with higher path score
+    let path = path.to_path_buf();
 
-    if !save_path.exists() {
+    fn traverse(path: PathBuf) -> Result<Vec<PathBuf>, std::io::Error> {
+        let entries = path.as_path().read_dir()?;
+
+        let mut file_list: Vec<PathBuf> = Vec::new();
+
+        for entry in entries {
+            let entry = entry?;
+
+            if entry.file_type()?.is_dir() {
+                file_list.append(&mut traverse(entry.path())?);
+                continue;
+            }
+
+            file_list.push(entry.path());
+        }
+
+        return Ok(file_list);
+    }
+
+    let file_list = traverse(path)?;
+
+    let mut file_map: HashMap<OsString, PathBuf> = HashMap::new();
+
+    for path in file_list {
+        let name = path.file_name();
+
+        if name.is_none() {
+            return Err(
+                format!("Failed to get filename for file: {:#?}", path).into()
+            );
+        }
+
+        let name = name.unwrap();
+
+        if file_map.contains_key(name) {
+            let other_path = file_map.get(name).unwrap();
+
+            let path_str = path.to_str();
+            let other_path_str = other_path.to_str();
+
+            if path_str.is_none() {
+                return Err(
+                    format!("Failed to get UTF-8 path string for path: {:#?}", path).into()
+                );
+            }
+
+            if other_path_str.is_none() {
+                return Err(
+                    format!("Failed to get UTF-8 path string for path: {:#?}", path).into()
+                );
+            }
+
+            let cur_score = get_path_score(path_str.unwrap());
+            let other_score = get_path_score(other_path_str.unwrap());
+
+            if cur_score > other_score {
+                file_map.insert(name.into(), path.to_owned());
+            }
+        } else {
+            file_map.insert(name.into(), path.to_owned());
+        }
+    }
+
+    return Ok(
+        file_map
+            .values()
+            .cloned()
+            .collect()
+    );
+}
+
+pub fn unpack_cold_clear(version: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let zip_path = paths::get_cold_clear_download_path(version);
+    let zip_path = zip_path.as_path();
+
+    if !zip_path.exists() {
         download_cold_clear(version)?;
     }
 
-    let save_path = save_path.to_str().unwrap();
+    let zip_file = std::fs::File::open(zip_path)?;
+    let mut zip_archive = ZipArchive::new(&zip_file)?;
 
-    let zip_file = std::fs::File::open(save_path)?;
+    let lib_path = paths::get_sandboxed_save_path().join("lib");
+    let temp_lib_path = paths::get_sandboxed_save_path().join("~lib");
 
-    let mut zip_archive = ZipArchive::new(zip_file)?;
+    zip_archive.extract(&temp_lib_path)?;
 
-    todo!(); // TODO: Extract, flatten, select (path_score) and move library files
+    let files_to_move = pick_files_to_move(&temp_lib_path)?;
+
+    for path in files_to_move {
+        let dest = lib_path.join(path.file_name().unwrap());
+        fs::rename(path, dest)?;
+    }
+
+    fs::remove_dir_all(temp_lib_path)?;
+    
+    return Ok(());
 }
