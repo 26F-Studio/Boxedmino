@@ -17,6 +17,7 @@ pub struct Config {
     pub game_repo_path: String,
     pub use_gui: bool,
     pub use_cold_clear: bool,
+    pub cold_clear_version: String,
 }
 
 /// [See definition for flags](crate::CliInstruction::Run::flags)
@@ -55,6 +56,7 @@ impl Config {
             game_repo_path: "".to_string(),
             use_gui: true,
             use_cold_clear: true,
+            cold_clear_version: "11.4.1".to_string(),
         }
     }
     pub fn load_from_file() -> Self {
@@ -151,6 +153,7 @@ impl From<Settings> for Config {
             game_repo_path: settings.game_repo_path.as_str().to_string(),
             use_gui: true,
             use_cold_clear: settings.use_cold_clear,
+            cold_clear_version: settings.cold_clear_version.as_str().to_string(),
         }
     }
 }
@@ -164,6 +167,7 @@ impl From<Config> for Settings {
             game_repo_path: cfg.game_repo_path.clone().into(),
             repo_initialized: cfg.repo_initialized,
             use_cold_clear: cfg.use_cold_clear,
+            cold_clear_version: cfg.cold_clear_version.clone().into(),
         }
     }
 }

@@ -1,12 +1,11 @@
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsString;
 use std::io::Write;
-use std::fs::{self, File};
-use std::path::{PathBuf};
+use std::fs;
+use std::path::PathBuf;
 use std::collections::HashMap;
 use std::thread;
 use std::time::{Instant, Duration};
 use std::sync::{mpsc, Arc, Mutex};
-use reqwest::Url;
 use slint::SharedString;
 use slint::ComponentHandle;
 use tokio::runtime::Runtime;
@@ -498,6 +497,9 @@ pub fn unpack_cold_clear(version: &str) -> Result<(), Box<dyn std::error::Error>
 
     if let Err(_) = zip_archive {
         eprintln!("ColdClear zip archive at '{zip_path:#?}' seems to be invalid. Redownloading.");
+
+        fs::remove_file(zip_path)?;
+
         download_cold_clear(version)?;
 
         zip_archive = ZipArchive::new(&zip_file);
@@ -522,33 +524,36 @@ pub fn unpack_cold_clear(version: &str) -> Result<(), Box<dyn std::error::Error>
     return Ok(());
 }
 
-pub fn get_available_offline_versions() -> Result<Vec<String>, std::io::Error> {
-    let path = paths::get_cold_clear_download_path("")
-        .parent()?;
+pub fn get_available_offline_versions() -> Vec<String> {
+    let path = paths::get_cold_clear_download_path("");
+    let path = path
+        .parent();
+    if path.is_none() {
+        return vec![];
+    }
+    let path = path.unwrap();
 
-    let entries = fs::read_dir(path)?;
+    let entries = fs::read_dir(path);
+    if entries.is_err() {
+        return vec![];
+    }
+    let entries = entries.unwrap();
 
     let mut versions: Vec<String> = Vec::new();
 
     for entry in entries {
-        let entry = entry?;
-
+        if entry.is_err() { continue; }
+        let entry = entry.unwrap();
         let path = entry.path();
-        if !path.is_file() {
-            continue;
-        }
+        if !path.is_file() { continue; }
 
         let name = path.file_name();
-        if name.is_none() {
-            continue;
-        }
+        if name.is_none() { continue; }
         let name = name.unwrap()
-            .to_str()
-            .expect("Failed to get UTF-8 string from OsStr");
-
-        if !name.ends_with(".zip") {
-            continue;
-        }
+            .to_str();
+        if name.is_none() { continue; }
+        let name = name.unwrap();
+        if !name.ends_with(".zip") { continue; }
 
         let version = name
             .replace(".zip", "");
@@ -556,10 +561,13 @@ pub fn get_available_offline_versions() -> Result<Vec<String>, std::io::Error> {
         versions.push(version);
     }
 
-    return Ok(versions);
+    return versions;
 }
 
-pub fn get_available_versions() -> Result<Vec<String>, Box<dyn std::error::Error>> {
+/// BLOCKING FUNCTION  
+/// This calls the GitHub API.  
+/// It shouldn't take *too* long, but you should wrap this in a separate thread if you can.
+pub fn get_available_online_versions() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let api_url = paths::COLD_CLEAR_RELEASES_API_URL;
 
     let response = reqwest::blocking::get(api_url)?;
@@ -585,4 +593,27 @@ pub fn get_available_versions() -> Result<Vec<String>, Box<dyn std::error::Error
     }
 
     return Ok(versions);
+}
+
+/// BLOCKING FUNCTION  
+/// This calls the GitHub API.  
+/// It shouldn't take *too* long, but you should wrap this in a separate thread if you can.
+pub fn get_available_versions() -> Vec<String> {
+    let mut versions = get_available_offline_versions();
+    let online_versions = get_available_online_versions();
+
+    if let Err(e) = online_versions {
+        eprintln!("Failed to get ColdClear online version list: {:#?}", e);
+        return versions;
+    }
+
+    let online_versions = online_versions.unwrap();
+
+    for online_version in online_versions {
+        if !versions.contains(&online_version) {
+            versions.push(online_version);
+        }
+    }
+
+    return versions;
 }

@@ -1,4 +1,4 @@
-import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton, ProgressIndicator, LineEdit, ListView } from "std-widgets.slint";
+import { TabWidget, Button, Switch, ScrollView, Palette, StandardButton, ProgressIndicator, LineEdit, ListView, ComboBox } from "std-widgets.slint";
 import "fonts/JetBrainsMono-Bold.ttf";
 
 struct Settings {
@@ -8,6 +8,7 @@ struct Settings {
     repo_initialized: bool,
     game_repo_path: string,
     use_cold_clear: bool,
+    cold_clear_version: string,
 }
 
 component BoxedminoBanner {
@@ -52,9 +53,13 @@ export component MainWindow inherits Window {
         sandboxed: true,
         clear_temp_dir: true,
         import_save_on_play: false,
+        repo_initialized: true,
         game_repo_path: "",
+        use_cold_clear: true,
+        cold_clear_version: "11.4.1",
     };
     in property <bool> is_wayland_used: false;
+    in property <[string]> cc_versions: ["11.4.1", "11.4.2"];
     private property <[string]> matched_versions: versions;
     private property <string> selected_version: "";
     private property <string> searched_string: "";
@@ -286,25 +291,50 @@ export component MainWindow inherits Window {
                         }
                     }
                 }
-                HorizontalLayout {
-                    VerticalLayout {
-                        Text {
-                            text: "Cold Clear AI";
-                            font-size: 1.25rem;
+                VerticalLayout {
+                    spacing: 4px;
+                    HorizontalLayout {
+                        alignment: space-between;
+                        VerticalLayout {
+                            Text {
+                                text: "Cold Clear AI [WIP]";
+                                font-size: 1.25rem;
+                            }
+                            Text {
+                                text: "Import Techmino's AI library to the sandbox.";
+                                font-size: 0.96rem;
+                            }
                         }
-                        Text {
-                            text: "Import Techmino's AI library to the sandbox.";
-                            font-size: 0.96rem;
+                        Switch {
+                            checked: settings.use_cold_clear;
+                            toggled => {
+                                settings.use_cold_clear = self.checked;
+                                cc_ver_select.enabled = self.checked;
+                            }
                         }
                     }
-                    Switch {
-                        checked: settings.use_cold_clear;
-                        toggled => { settings.use_cold_clear = self.checked; }
+                    HorizontalLayout {
+                        alignment: stretch;
+                        spacing: 8px;
+                        Text {
+                            text: "Cold Clear version: ";
+                            vertical-alignment: center;
+                            font-size: 1.026rem;
+                        }
+                        cc_ver_select := ComboBox {
+                            enabled: settings.use_cold_clear;
+                            model: cc_versions;
+                            current-value: settings.cold_clear_version;
+                            selected(version) => {
+                                settings.cold_clear_version = version;
+                            }
+                        }
                     }
                 }
                 VerticalLayout {
                     padding-top: 8px;
                     Button {
+                        // TODO: Highlight Apply button when settings are changed
                         text: "Apply";
                         clicked => { apply_settings(settings); }
                     }

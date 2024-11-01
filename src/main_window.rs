@@ -1,5 +1,6 @@
 use open as file_open;
 use copypasta::ClipboardProvider;
+use crate::cold_clear;
 use crate::dirs;
 use crate::conf::Config;
 use crate::game;
@@ -101,6 +102,16 @@ pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     main_window.set_versions(
         get_versions(&cfg.game_repo_path, false)
     );
+    main_window.set_cc_versions(
+        ModelRc::new(
+            VecModel::from(
+                cold_clear::get_available_offline_versions()
+                    .iter()
+                    .map(|s| SharedString::from(s))
+                    .collect::<Vec<SharedString>>()
+            )
+        )
+    );
     main_window.on_update_version_list(|include_commits| {
         get_versions(Config::load().game_repo_path.as_str(), include_commits)
     });
@@ -114,17 +125,28 @@ pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
         return ModelRc::new(filtered);
     });
     main_window.on_apply_settings(|settings| {
-        let config = Config {
-            sandboxed: settings.sandboxed,
-            clear_temp_dir: settings.clear_temp_dir,
-            import_save_on_play: settings.import_save_on_play,
-            repo_initialized: settings.repo_initialized,
-            game_repo_path: settings.game_repo_path.as_str().to_string(),
-            use_gui: true,
-            use_cold_clear: settings.use_cold_clear,
-        };
+        let config: Config = settings.into();
         config.save();
     });
+
+    // Fetch for new CC version asynchronously
+    let main_window_weak = main_window.as_weak();
+    std::thread::spawn(move || {
+        main_window_weak.upgrade_in_event_loop(|window| {
+            window.set_cc_versions(
+                ModelRc::new(
+                    VecModel::from(
+                        cold_clear::get_available_versions()
+                            .iter()
+                            .map(|s| SharedString::from(s))
+                            .collect::<Vec<SharedString>>()
+                    )
+                )
+            )
+        })
+        .expect("Failed to upgrade weak ref in event loop while fetching CC versions");
+    });
+
     main_window.run()?;
 
     return Ok(main_window);
