@@ -181,6 +181,9 @@ pub mod paths {
             "https://github.com/26F-Studio/cold_clear_ai_love2d_wrapper/releases/download/{version}/{file_name}"
         );
     }
+
+    pub const COLD_CLEAR_RELEASES_API_URL: &str =
+        "https://api.github.com/repos/26F-Studio/cold_clear_ai_love2d_wrapper/releases";
     
     #[cfg(not(any(
         target_os = "windows",

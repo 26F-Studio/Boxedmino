@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::thread;
 use std::time::{Instant, Duration};
 use std::sync::{mpsc, Arc, Mutex};
+use reqwest::Url;
 use slint::SharedString;
 use slint::ComponentHandle;
 use tokio::runtime::Runtime;
@@ -519,4 +520,69 @@ pub fn unpack_cold_clear(version: &str) -> Result<(), Box<dyn std::error::Error>
     fs::remove_dir_all(temp_lib_path)?;
     
     return Ok(());
+}
+
+pub fn get_available_offline_versions() -> Result<Vec<String>, std::io::Error> {
+    let path = paths::get_cold_clear_download_path("")
+        .parent()?;
+
+    let entries = fs::read_dir(path)?;
+
+    let mut versions: Vec<String> = Vec::new();
+
+    for entry in entries {
+        let entry = entry?;
+
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+
+        let name = path.file_name();
+        if name.is_none() {
+            continue;
+        }
+        let name = name.unwrap()
+            .to_str()
+            .expect("Failed to get UTF-8 string from OsStr");
+
+        if !name.ends_with(".zip") {
+            continue;
+        }
+
+        let version = name
+            .replace(".zip", "");
+
+        versions.push(version);
+    }
+
+    return Ok(versions);
+}
+
+pub fn get_available_versions() -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let api_url = paths::COLD_CLEAR_RELEASES_API_URL;
+
+    let response = reqwest::blocking::get(api_url)?;
+
+    let json = response.text()?;
+
+    let json: serde_json::Value = serde_json::from_str(&json)?;
+
+    let releases = match json {
+        serde_json::Value::Array(arr) => arr,
+        _ => return Err("Expected JSON array from GitHub API".into())
+    };
+
+    let mut versions: Vec<String> = Vec::new();
+
+    for release in releases {
+        let version = match release["tag_name"].as_str() {
+            Some(version) => version,
+            None => continue
+        };
+
+        versions.push(version.to_owned());
+    }
+
+    return Ok(versions);
 }
