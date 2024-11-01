@@ -41,18 +41,56 @@ fn format_bytes(bytes: i32) -> SharedString {
     }
 }
 
+#[test]
+fn test_format_bytes() {
+    let cases = [
+        (0, "0 bytes"),
+        (999, "999 bytes"),
+        (1000, "1.00 KB"),
+        (1024, "1.02 KB"),
+        (1048575, "1.05 MB"),
+        (1048576, "1.05 MB"),
+        (1073741823, "1.07 GB"),
+        (1073741824, "1.07 GB"),
+        (2147483647, "2.15 GB"),
+    ];
+
+    for (input, expected) in cases {
+        assert_eq!(format_bytes(input), expected);
+    }
+}
+
 fn format_time(secs: i32) -> String {
     if secs < 60 {
         return format!("{secs:.0} seconds");
     } else if secs < 3600 {
-        return format!("{:.0}:{:2.0}", secs / 60, secs % 60)
+        return format!("{:.0}:{:02.0}", secs / 60, secs % 60)
     } else {
         return format!(
-            "{:.0}:{:2.0}:{:2.0}",
+            "{:.0}:{:02.0}:{:02.0}",
             secs / 3600,
             secs % 3600 / 60,
             secs % 60
         );
+    }
+}
+
+#[test]
+fn test_format_time() {
+    let cases = [
+        (0, "0 seconds"),
+        (59, "59 seconds"),
+        (60, "1:00"),
+        (61, "1:01"),
+        (3599, "59:59"),
+        (3600, "1:00:00"),
+        (3661, "1:01:01"),
+        (86399, "23:59:59"),
+        (86400, "24:00:00"),
+    ];
+
+    for (input, expected) in cases {
+        assert_eq!(format_time(input), expected);
     }
 }
 
@@ -104,6 +142,7 @@ pub fn download_cold_clear(version: &str) -> Result<(), reqwest::Error> {
             tx.send(LoadingIPCMessage::SetDeterminacy(total_size != 0))
                 .expect("Failed to send IPC message");
 
+            let mut data = Vec::new();
             let mut downloaded_size = 0 as i32;
 
             let interrupted = Arc::new(Mutex::new(false));
@@ -141,6 +180,7 @@ pub fn download_cold_clear(version: &str) -> Result<(), reqwest::Error> {
                 let chunk = chunk.unwrap();
 
                 downloaded_size += chunk.len() as i32;
+                data.extend_from_slice(&chunk);
 
                 let elapsed = begin_time.elapsed();
 
@@ -167,20 +207,15 @@ pub fn download_cold_clear(version: &str) -> Result<(), reqwest::Error> {
             tx.send(LoadingIPCMessage::SetDeterminacy(false))
                 .expect("Failed to send IPC message");
 
-            let bytes = response.bytes().await;
-
-            if let Err(e) = bytes {
-                tx.send(LoadingIPCMessage::Error(e))
-                    .expect("Failed to send IPC message");
-                return;
-            }
-
-            let bytes = bytes.unwrap();
+            fs::create_dir_all(save_path.parent().unwrap())
+                .expect("Failed to create ColdClear download directory");
 
             let mut file = std::fs::File::create(save_path)
                 .expect("Failed to create ColdClear download file");
 
-            file.write_all(bytes.as_ref())
+            println!("Writing {} bytes to ColdClear path", data.len());
+
+            file.write_all(data.as_ref())
                 .expect("Failed to write ColdClear download file");
 
             tx.send(LoadingIPCMessage::Finish)
@@ -401,7 +436,17 @@ pub fn unpack_cold_clear(version: &str) -> Result<(), Box<dyn std::error::Error>
     }
 
     let zip_file = std::fs::File::open(zip_path)?;
-    let mut zip_archive = ZipArchive::new(&zip_file)?;
+
+    let mut zip_archive = ZipArchive::new(&zip_file);
+
+    if let Err(_) = zip_archive {
+        eprintln!("ColdClear zip archive at '{zip_path:#?}' seems to be invalid. Redownloading.");
+        download_cold_clear(version)?;
+
+        zip_archive = ZipArchive::new(&zip_file);
+    }
+
+    let mut zip_archive = zip_archive?;
 
     let lib_path = paths::get_sandboxed_save_path().join("lib");
     let temp_lib_path = paths::get_sandboxed_save_path().join("~lib");
