@@ -132,15 +132,21 @@ pub fn open(cfg: &Config) -> Result<MainWindow, slint::PlatformError> {
     // Fetch for new CC version asynchronously
     let main_window_weak = main_window.as_weak();
     std::thread::spawn(move || {
-        main_window_weak.upgrade_in_event_loop(|window| {
+        println!("Fetching CC versions...");
+        let rt = tokio::runtime::Runtime::new()
+            .expect("Failed to create Tokio runtime");
+        let versions = rt.block_on(async {
+            cold_clear::get_available_versions()
+                .await
+                .iter()
+                .map(|s| SharedString::from(s))
+                .collect::<Vec<SharedString>>()
+        });
+        println!("Online CC versions: {}", versions.len());
+        main_window_weak.upgrade_in_event_loop(move |window| {
             window.set_cc_versions(
                 ModelRc::new(
-                    VecModel::from(
-                        cold_clear::get_available_versions()
-                            .iter()
-                            .map(|s| SharedString::from(s))
-                            .collect::<Vec<SharedString>>()
-                    )
+                    VecModel::from(versions)
                 )
             )
         })

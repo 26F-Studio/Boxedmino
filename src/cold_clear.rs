@@ -564,15 +564,22 @@ pub fn get_available_offline_versions() -> Vec<String> {
     return versions;
 }
 
-/// BLOCKING FUNCTION  
-/// This calls the GitHub API.  
-/// It shouldn't take *too* long, but you should wrap this in a separate thread if you can.
-pub fn get_available_online_versions() -> Result<Vec<String>, Box<dyn std::error::Error>> {
+pub async fn get_available_online_versions() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let api_url = paths::COLD_CLEAR_RELEASES_API_URL;
 
-    let response = reqwest::blocking::get(api_url)?;
+    // let response = reqwest::blocking::get(api_url)?;
+    let client = reqwest::Client::new();
+    let request = client
+        .get(api_url)
+        .header("Accept", "application/vnd.github+json")
+        .header("X-GitHub-Api-Version", "2022-11-28")
+        .header("User-Agent", "boxedmino")
+        .build()
+        .expect("Failed to build request");
 
-    let json = response.text()?;
+    let response = client.execute(request).await?;
+
+    let json = response.text().await?;
 
     let json: serde_json::Value = serde_json::from_str(&json)?;
 
@@ -595,12 +602,9 @@ pub fn get_available_online_versions() -> Result<Vec<String>, Box<dyn std::error
     return Ok(versions);
 }
 
-/// BLOCKING FUNCTION  
-/// This calls the GitHub API.  
-/// It shouldn't take *too* long, but you should wrap this in a separate thread if you can.
-pub fn get_available_versions() -> Vec<String> {
+pub async fn get_available_versions() -> Vec<String> {
     let mut versions = get_available_offline_versions();
-    let online_versions = get_available_online_versions();
+    let online_versions = get_available_online_versions().await;
 
     if let Err(e) = online_versions {
         eprintln!("Failed to get ColdClear online version list: {:#?}", e);
