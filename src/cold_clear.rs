@@ -346,6 +346,62 @@ fn get_path_score(path: &str) -> i8 {
         return 0;
     }
 
+    #[cfg(target_arch = "aarch64")]
+    {
+        let pos_keywords = [
+            "arm64",
+            "aarch64"
+        ];
+
+        for keyword in pos_keywords.iter() {
+            if path.contains(keyword) {
+                return 1;
+            }
+        }
+
+        let neg_keywords = [
+            "arm",
+            "armhf",
+            "armv7"
+        ];
+
+        for keyword in neg_keywords.iter() {
+            if path.contains(keyword) {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
+    #[cfg(target_arch = "arm")]
+    {
+        let pos_keywords = [
+            "armeabi-v7a",
+            "armv7",
+            "arm32"
+        ];
+
+        for keyword in pos_keywords.iter() {
+            if path.contains(keyword) {
+                return 1;
+            }
+        }
+
+        let neg_keywords = [
+            "arm64",
+            "aarch64"
+        ];
+
+        for keyword in neg_keywords.iter() {
+            if path.contains(keyword) {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
     #[allow(unreachable_code)]{
         return 0;
     }
