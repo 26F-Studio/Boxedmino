@@ -104,6 +104,14 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let mut config = conf::Config::load();
 
+    if let Some(i) = INSTRUCTION.get().unwrap_or(&None) {
+        if let CliInstruction::ListVersions { .. } = i {
+            eprintln!("Available versions: ");
+            println!("{}", git::tags(&config.game_repo_path).join("\n"));
+            std::process::exit(0);
+        }
+    }
+
     let no_repo = !config.repo_initialized ||
         !git::is_repo_valid(&config.game_repo_path);
 

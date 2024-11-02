@@ -79,10 +79,13 @@ impl Config {
     pub fn load() -> Self {
         let mut cfg = Self::load_from_file();
 
+        cfg.use_gui = INSTRUCTION.get()
+            .unwrap_or(&None)
+            .is_none();
+
         if let Some(flags) = get_cli_config_flags() {
-            cfg.use_gui = false;
-            for byte in flags.trim().chars() {
-                match byte {
+            for char in flags.trim().chars() {
+                match char {
                     's' => cfg.sandboxed = false,
                     'S' => cfg.sandboxed = true,
                     'c' => cfg.clear_temp_dir = false,
@@ -92,7 +95,7 @@ impl Config {
                     'a' => cfg.use_cold_clear = false,
                     'A' => cfg.use_cold_clear = true,
                     _ => {
-                        eprintln!("Invalid config flag: {:?}", byte);
+                        eprintln!("Invalid config flag: {:?}", char);
                         std::process::exit(1);
                     }
                 }
