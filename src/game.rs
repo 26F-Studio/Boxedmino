@@ -1,3 +1,4 @@
+use crate::cold_clear;
 use crate::conf::Config;
 use crate::dirs;
 use crate::error_window;
@@ -28,7 +29,18 @@ pub fn run(cfg: &Config) {
     }
 
     if cfg.use_cold_clear {
-        crate::safe_todo(Some("Importing Cold Clear"));
+        println!("Unpacking Cold Clear version '{}'...", &cfg.cold_clear_version);
+        let res = cold_clear::unpack_cold_clear(&cfg.cold_clear_version);
+
+        if let Err(e) = res {
+            error_window::open_safe(
+                Some("Boxedmino - CC error".into()),
+                Some("An error occured while downloading or unpacking Cold Clear.".into()),
+                Some(e.to_string())
+            );
+        }
+
+        println!("Finished unpacking Cold Clear");
     }
 
     let mut command = Command::new("love");

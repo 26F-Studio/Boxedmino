@@ -510,6 +510,9 @@ pub fn unpack_cold_clear(version: &str) -> Result<(), Box<dyn std::error::Error>
     let lib_path = paths::get_sandboxed_save_path().join("lib");
     let temp_lib_path = paths::get_sandboxed_save_path().join("~lib");
 
+    fs::create_dir_all(&lib_path)?;
+    fs::create_dir_all(&temp_lib_path)?;
+
     zip_archive.extract(&temp_lib_path)?;
 
     let files_to_move = pick_files_to_move(&temp_lib_path)?;

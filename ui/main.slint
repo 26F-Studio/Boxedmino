@@ -298,7 +298,7 @@ export component MainWindow inherits Window {
                         alignment: space-between;
                         VerticalLayout {
                             Text {
-                                text: "Cold Clear AI [WIP]";
+                                text: "Import Cold Clear AI [Beta]";
                                 font-size: 1.25rem;
                             }
                             Text {
@@ -308,6 +308,7 @@ export component MainWindow inherits Window {
                         }
                         Switch {
                             checked: settings.use_cold_clear;
+                            enabled: settings.sandboxed;
                             toggled => {
                                 settings.use_cold_clear = self.checked;
                                 cc_ver_select.enabled = self.checked;

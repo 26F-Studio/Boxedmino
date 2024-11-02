@@ -131,7 +131,10 @@ fn main() -> Result<(), slint::PlatformError> {
                 v
             ).expect(
                 format!("Failed to run `git checkout {v}`").as_str()
-            );
+            ).success()
+            .then(|| {
+                panic!("Command `git checkout {v}` failed");
+            });
         }
 
         game::run(&config);

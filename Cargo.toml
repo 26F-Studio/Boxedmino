@@ -1,7 +1,13 @@
 [package]
 name = "boxedmino"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
+description = "Techmino version manager and save sandboxing"
+repository = "https://github.com/26F-Studio/Boxedmino"
+license = "GPL-3.0-only"
+license-file = "LICENSE"
+keywords = ["techmino", "game", "stacker", "blocks", "blockstacker"]
+categories = ["games", "virtualization"]
 
 [dependencies]
 clap = { version = "4.5.20", features = ["derive"] }
