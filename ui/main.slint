@@ -19,6 +19,7 @@ component BoxedminoBanner {
         Image {
             width: 36px;
             height: 36px;
+            colorize: Palette.foreground;
             source: @image-url("icons/boxedmino.svg");
         }
 
@@ -63,6 +64,7 @@ export component MainWindow inherits Window {
     private property <[string]> matched_versions: versions;
     private property <string> selected_version: "";
     private property <string> searched_string: "";
+    private property <bool> settings_changed: false;
 
     title: "Boxedmino";
     TabWidget {
@@ -188,7 +190,10 @@ export component MainWindow inherits Window {
                     }
                     Switch {
                         checked: settings.sandboxed;
-                        toggled => { settings.sandboxed = self.checked; }
+                        toggled => {
+                            settings_changed = true;
+                            settings.sandboxed = self.checked;
+                        }
                     }
                 }
                 HorizontalLayout {
@@ -208,7 +213,10 @@ export component MainWindow inherits Window {
                     Switch {
                         checked: settings.clear_temp_dir;
                         enabled: settings.sandboxed;
-                        toggled => { settings.clear_temp_dir = self.checked; }
+                        toggled => {
+                            settings_changed = true;
+                            settings.clear_temp_dir = self.checked;
+                        }
                     }
                 }
                 HorizontalLayout {
@@ -228,7 +236,10 @@ export component MainWindow inherits Window {
                     Switch {
                         checked: settings.import_save_on_play;
                         enabled: settings.sandboxed && settings.clear_temp_dir;
-                        toggled => { settings.import_save_on_play = self.checked; }
+                        toggled => {
+                            settings_changed = true;
+                            settings.import_save_on_play = self.checked;
+                        }
                     }
                 }
                 HorizontalLayout {
@@ -281,13 +292,17 @@ export component MainWindow inherits Window {
                             placeholder-text: "Path to game repo";
                             edited => {
                                 settings.game_repo_path = self.text;
+                                settings_changed = true;
                             }
                         }
                         Button {
                             max-width: 5rem;
                             horizontal-stretch: 0;
                             text: "Browse...";
-                            clicked => { browse_for_repo(); }
+                            clicked => {
+                                browse_for_repo();
+                                settings_changed = true;
+                            }
                         }
                     }
                 }
@@ -310,6 +325,7 @@ export component MainWindow inherits Window {
                             checked: settings.use_cold_clear;
                             enabled: settings.sandboxed;
                             toggled => {
+                                settings_changed = true;
                                 settings.use_cold_clear = self.checked;
                                 cc_ver_select.enabled = self.checked;
                             }
@@ -328,17 +344,40 @@ export component MainWindow inherits Window {
                             model: cc_versions;
                             current-value: settings.cold_clear_version;
                             selected(version) => {
+                                settings_changed = true;
                                 settings.cold_clear_version = version;
                             }
                         }
                     }
                 }
                 VerticalLayout {
-                    padding-top: 8px;
-                    Button {
-                        // TODO: Highlight Apply button when settings are changed
-                        text: "Apply";
-                        clicked => { apply_settings(settings); }
+                    padding-top: 16px;
+                    Rectangle {
+                        border-width: {
+                            if (settings_changed) {
+                                1px
+                            } else {
+                                0px
+                            }
+                        }
+                        border-color: {
+                            if (settings_changed) {
+                                Palette.accent-background
+                            } else {
+                                transparent
+                            }
+                        }
+                        border-radius: self.height;
+                        VerticalLayout {
+                            padding: 1px;
+                            Button {
+                                text: "Apply";
+                                clicked => {
+                                    settings_changed = false;
+                                    apply_settings(settings);
+                                }
+                            }
+                        }
                     }
                 }
             }

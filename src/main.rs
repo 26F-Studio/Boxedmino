@@ -75,7 +75,7 @@ pub enum CliInstruction {
         ///   `I` [Import]
         ///      If on, Boxedmino will try to import your main save to the temporary save directory.
         ///   `A` [AI]
-        ///      If on, Techmino's AI (ColdClear) will be enabled. [not yet implemented]
+        ///      If on, Techmino's AI (ColdClear) will be enabled.
         #[arg(short, long, verbatim_doc_comment)]
         flags: Option<String>,
     },
