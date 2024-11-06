@@ -58,6 +58,9 @@ pub fn run(cfg: &Config) {
 
     git::restore(&cfg.game_repo_path)
         .expect("Failed to restore repository using git");
+
+    git::checkout("main")
+        .expect("Failed to checkout to main branch")
 }
 
 fn copy_dir_all(from: &str, to: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
